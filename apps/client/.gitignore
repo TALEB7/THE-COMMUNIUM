@@ -1,0 +1,22 @@
+# dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# testing
+coverage/
+
+# next.js
+.next/
+out/
+
+# env files
+.env*
+.env.local
+
+# misc
+.DS_Store
+*.tsbuildinfo
+next-env.d.ts
+# clerk configuration (can include secrets)
+/.clerk/

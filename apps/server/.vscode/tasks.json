@@ -1,0 +1,12 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Start NestJS server",
+			"type": "shell",
+			"command": "pnpm start:dev",
+			"isBackground": true,
+			"group": "build"
+		}
+	]
+}
