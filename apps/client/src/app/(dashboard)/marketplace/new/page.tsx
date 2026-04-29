@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,7 +9,7 @@ import { ArrowLeft, X, Plus } from 'lucide-react';
 import { ImageUpload } from '@/components/ui/image-upload';
 import { useT } from '@/lib/i18n';
 import { LISTING_CONDITION_OPTIONS, CITIES } from '@communium/shared';
-import { useCategoriesTree, useCreateListing } from '@/hooks/marketplace';
+import { useCategoriesTree, useCreateListing, usePriceSuggestion, useClassifyListing } from '@/hooks/marketplace';
 
 export default function CreateListingPage() {
   const { t } = useT();
@@ -26,10 +26,34 @@ export default function CreateListingPage() {
   const [tagInput, setTagInput] = useState('');
   const [tags, setTags] = useState<string[]>([]);
   const [imageUrls, setImageUrls] = useState<string[]>([]);
+  const [classifyInput, setClassifyInput] = useState({ title: '', description: '' });
+  const [dismissedSuggestion, setDismissedSuggestion] = useState(false);
 
   const { data: categories } = useCategoriesTree();
-
   const createMutation = useCreateListing();
+
+  // AI — Price suggestion
+  const { data: priceSuggestion } = usePriceSuggestion(
+    categoryId || undefined,
+    condition || undefined,
+  );
+
+  // AI — Auto-classify (debounced via state)
+  const classifyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { data: classifyResult } = useClassifyListing(
+    classifyInput.title,
+    classifyInput.description,
+  );
+
+  const scheduleClassify = (t: string, d: string) => {
+    if (classifyTimer.current) clearTimeout(classifyTimer.current);
+    classifyTimer.current = setTimeout(() => {
+      setDismissedSuggestion(false);
+      setClassifyInput({ title: t, description: d });
+    }, 800);
+  };
+
+  useEffect(() => () => { if (classifyTimer.current) clearTimeout(classifyTimer.current); }, []);
 
   const addTag = () => {
     const tag = tagInput.trim().toLowerCase();
@@ -101,7 +125,7 @@ export default function CreateListingPage() {
               <input
                 type="text"
                 value={title}
-                onChange={(e) => setTitle(e.target.value)}
+                onChange={(e) => { setTitle(e.target.value); scheduleClassify(e.target.value, description); }}
                 placeholder="Ex: iPhone 15 Pro 256 Go"
                 className="w-full rounded-lg border px-4 py-2.5 text-sm"
                 maxLength={200}
@@ -117,7 +141,7 @@ export default function CreateListingPage() {
               </label>
               <textarea
                 value={description}
-                onChange={(e) => setDescription(e.target.value)}
+                onChange={(e) => { setDescription(e.target.value); scheduleClassify(title, e.target.value); }}
                 placeholder="Décrivez votre article en détail..."
                 className="w-full rounded-lg border px-4 py-2.5 text-sm"
                 rows={5}
@@ -126,6 +150,42 @@ export default function CreateListingPage() {
               />
               <p className="mt-1 text-xs text-muted-foreground">{description.length}/5000</p>
             </div>
+
+            {/* AI Auto-classify suggestion */}
+            {classifyResult && !dismissedSuggestion && (
+              <div className="rounded-lg border border-primary/30 bg-accent px-4 py-3 text-sm">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1">
+                    <p className="font-medium text-primary">
+                      ✨ Suggestion IA — Catégorie détectée : {classifyResult.predicted_category}
+                    </p>
+                    {classifyResult.suggested_tags.length > 0 && (
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Tags suggérés :{' '}
+                        <button
+                          type="button"
+                          className="text-primary underline"
+                          onClick={() => {
+                            const newTags = classifyResult.suggested_tags.filter((t) => !tags.includes(t)).slice(0, 10 - tags.length);
+                            setTags([...tags, ...newTags]);
+                            setDismissedSuggestion(true);
+                          }}
+                        >
+                          {classifyResult.suggested_tags.join(', ')}
+                        </button>
+                      </p>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setDismissedSuggestion(true)}
+                    className="text-xs text-muted-foreground hover:text-foreground"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Price & Condition */}
             <div className="grid gap-4 sm:grid-cols-2">
@@ -159,6 +219,27 @@ export default function CreateListingPage() {
                 </select>
               </div>
             </div>
+
+            {/* AI Price suggestion */}
+            {priceSuggestion && (
+              <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm">
+                <p className="font-medium text-amber-800">
+                  💡 Prix IA suggéré : {priceSuggestion.recommended_price.toLocaleString('fr-MA')} Dhs
+                </p>
+                <p className="mt-0.5 text-xs text-amber-700">
+                  Fourchette estimée : {priceSuggestion.min_price.toLocaleString('fr-MA')} – {priceSuggestion.max_price.toLocaleString('fr-MA')} Dhs
+                  {' '}(confiance {Math.round(priceSuggestion.confidence * 100)}%
+                  {priceSuggestion.method === 'heuristic' ? ' · estimation' : ' · basé sur le marché'})
+                </p>
+                <button
+                  type="button"
+                  className="mt-1.5 text-xs font-medium text-amber-800 underline"
+                  onClick={() => setPrice(String(priceSuggestion.recommended_price))}
+                >
+                  Appliquer ce prix
+                </button>
+              </div>
+            )}
 
             {/* Category */}
             <div>

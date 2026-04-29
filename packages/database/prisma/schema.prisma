@@ -54,7 +54,7 @@ model User {
   notificationPrefs NotificationPreference?
   mentorProfile     MentorProfile?
   mentorshipRequests MentorshipRequest[]
-  mentorshipSessions MentorshipSession[]    @relation()
+  mentorshipSessions MentorshipSession[]
   mentorshipReviews MentorshipReview[]
   adminLogs         AdminLog[]
   reportsMade       Report[]               @relation("ReportsMade")
@@ -73,6 +73,7 @@ model User {
   forumPosts        ForumPost[]
   forumComments     ForumComment[]
   forumLikes        ForumLike[]
+  groupLikes        GroupLike[]
   eventsCreated     Event[]
   eventRsvps        EventRsvp[]
   groupsOwned       Group[]            @relation("GroupOwner")
@@ -94,6 +95,10 @@ model User {
   // Phase 7 Relations
   testimonials      Testimonial[]
 
+  @@index([role])
+  @@index([status])
+  @@index([isActive])
+  @@index([accountType])
   @@map("users")
 }
 
@@ -282,9 +287,10 @@ model Listing {
   // Relations
   seller    User      @relation(fields: [sellerId], references: [id], onDelete: Cascade)
   category  Category  @relation(fields: [categoryId], references: [id])
-  favorites FavoriteListing[]
-  reviews   ListingReview[]
-  auction   Auction?
+  favorites  FavoriteListing[]
+  reviews    ListingReview[]
+  auction    Auction?
+  embedding  ListingEmbedding?
   priceAlerts     PriceAlert[]
   recommendations Recommendation[]
   comparisonItems ComparisonItem[]
@@ -534,9 +540,10 @@ model MentorProfile {
 
   // Relations
   user     User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  sessions MentorshipSession[]
-  reviews  MentorshipReview[]
-  requests MentorshipRequest[]
+  sessions  MentorshipSession[]
+  reviews   MentorshipReview[]
+  requests  MentorshipRequest[]
+  embedding MentorEmbedding?
 
   @@map("mentor_profiles")
 }
@@ -1087,10 +1094,25 @@ model GroupPost {
   group    Group          @relation(fields: [groupId], references: [id], onDelete: Cascade)
   author   User           @relation(fields: [authorId], references: [id], onDelete: Cascade)
   comments GroupComment[]
+  likes    GroupLike[]
 
   @@index([groupId, createdAt])
   @@index([authorId])
   @@map("group_posts")
+}
+
+model GroupLike {
+  id        String    @id @default(cuid())
+  postId    String
+  userId    String
+  createdAt DateTime  @default(now())
+
+  post GroupPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+  @@index([postId])
+  @@map("group_likes")
 }
 
 model GroupComment {
@@ -1475,5 +1497,35 @@ model GroupMeetingParticipant {
   @@unique([meetingId, userId])
   @@index([meetingId])
   @@map("group_meeting_participants")
+}
+
+// ===========================================================
+// AI Embeddings
+// ===========================================================
+
+model ListingEmbedding {
+  id        String   @id @default(cuid())
+  listingId String   @unique
+  embedding Json     // float[] stored as JSON array
+  model     String   @default("paraphrase-multilingual-MiniLM-L12-v2")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@map("listing_embeddings")
+}
+
+model MentorEmbedding {
+  id              String        @id @default(cuid())
+  mentorProfileId String        @unique
+  embedding       Json          // float[] stored as JSON array
+  model           String        @default("paraphrase-multilingual-MiniLM-L12-v2")
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  mentorProfile MentorProfile @relation(fields: [mentorProfileId], references: [id], onDelete: Cascade)
+
+  @@map("mentor_embeddings")
 }
 

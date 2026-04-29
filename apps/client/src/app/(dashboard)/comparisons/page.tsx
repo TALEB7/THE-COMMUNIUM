@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useAuth } from '@/lib/auth-client';
 import Link from 'next/link';
+import { getMediaUrl } from '@/lib/media-url';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -105,7 +106,7 @@ export default function ComparisonsPage() {
                 className={`w-full text-left p-3 rounded-lg border-2 transition ${
                   selectedList === list.id
                     ? 'border-primary bg-accent'
-                    : 'border-border hover:border-[#d4c088]'
+                    : 'border-border hover:border-[#C8102E]'
                 }`}
               >
                 <div className="flex items-center justify-between">
@@ -221,7 +222,7 @@ export default function ComparisonsPage() {
                         <td key={item.id} className="p-3 text-center">
                           {item.listing?.images?.[0] ? (
                             <img
-                              src={item.listing.images[0]}
+                              src={getMediaUrl(item.listing.images[0]) || item.listing.images[0]}
                               alt=""
                               className="w-24 h-24 object-cover rounded-lg mx-auto"
                             />
@@ -247,7 +248,7 @@ export default function ComparisonsPage() {
                       <td className="text-xs font-medium text-muted-foreground p-3">Catégorie</td>
                       {activeList.items.map((item: any) => (
                         <td key={item.id} className="p-3 text-center">
-                          <Badge variant="outline" className="text-xs border-[#d4c088]">
+                          <Badge variant="outline" className="text-xs border-[#C8102E]">
                             {item.listing?.category?.name || '-'}
                           </Badge>
                         </td>

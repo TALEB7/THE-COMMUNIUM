@@ -17,7 +17,7 @@ export default function BookmarksPage() {
   const { t } = useT();
 
   const TYPE_META: Record<string, { icon: any; label: string; color: string }> = {
-    LISTING: { icon: ShoppingBag, label: t.bookmarks.listings, color: '#c9a730' },
+    LISTING: { icon: ShoppingBag, label: t.bookmarks.listings, color: '#C8102E' },
     FORUM_POST: { icon: MessageSquare, label: t.bookmarks.forum, color: '#1a237e' },
     EVENT: { icon: Calendar, label: t.bookmarks.events, color: '#2e7d32' },
     GROUP: { icon: Users, label: t.bookmarks.groups, color: '#6a1b9a' },
@@ -168,7 +168,7 @@ export default function BookmarksPage() {
                         <input
                           value={noteText}
                           onChange={e => setNoteText(e.target.value)}
-                          className="flex-1 px-3 py-1.5 text-sm rounded border border-border focus:ring-1 focus:ring-[#c9a730]"
+                          className="flex-1 px-3 py-1.5 text-sm rounded border border-border focus:ring-1 focus:ring-[#C8102E]"
                           placeholder={t.bookmarks.addNote}
                           autoFocus
                         />

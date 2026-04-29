@@ -27,6 +27,24 @@ export class MentorshipController {
     return this.mentorshipService.getMentorProfile(userId);
   }
 
+  /**
+   * GET /mentorship/mentors/match?menteeId=xxx&goals=...&limit=10
+   *
+   * AI-powered mentor matching — returns mentors ranked by a hybrid score
+   * that combines semantic similarity (embedding cosine), rating, years of
+   * experience, and proven track record (total sessions).
+   *
+   * Must be declared BEFORE :userId to avoid route collision.
+   */
+  @Get('mentors/match')
+  async findMatchingMentors(
+    @Query('menteeId') menteeId: string,
+    @Query('goals') goals = '',
+    @Query('limit') limit?: string,
+  ) {
+    return this.mentorshipService.findMatchingMentors(menteeId, goals, limit ? parseInt(limit) : 10);
+  }
+
   @Get('mentors')
   async searchMentors(
     @Query('expertise') expertise?: string,

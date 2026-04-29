@@ -42,3 +42,9 @@ coverage/
 
 # Docker
 docker-data/
+
+# User uploads (local dev only — use S3/R2 in production)
+apps/server/uploads/
+
+# Claude Code local memory
+.claude/

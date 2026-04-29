@@ -9,7 +9,7 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { ProfilesService } from './profiles.service';
-import { ClerkAuthGuard } from '../common/guards/clerk-auth.guard';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { UpdatePersonalProfileDto } from './dto/update-personal-profile.dto';
 import { UpdateBusinessProfileDto } from './dto/update-business-profile.dto';
@@ -23,7 +23,7 @@ export class ProfilesController {
    * Get current user's profile
    */
   @Get('me')
-  @UseGuards(ClerkAuthGuard)
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get my profile' })
   async getMyProfile(@CurrentUser('id') userId: string) {
@@ -34,7 +34,7 @@ export class ProfilesController {
    * Update personal profile
    */
   @Put('me')
-  @UseGuards(ClerkAuthGuard)
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update my profile' })
   async updateMyProfile(

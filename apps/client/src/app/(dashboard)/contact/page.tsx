@@ -70,7 +70,7 @@ export default function ContactPage() {
           {t.contact.title}
         </h1>
         <p className="text-muted-foreground">{t.contact.description}</p>
-        <div className="h-0.5 bg-gradient-to-r from-[#c9a730] via-[#e6c200] to-transparent max-w-[120px] mt-1" />
+        <div className="h-0.5 bg-gradient-to-r from-[#C8102E] via-[#E8233E] to-transparent max-w-[120px] mt-1" />
       </div>
 
       {/* Tabs */}
@@ -133,7 +133,7 @@ export default function ContactPage() {
                           onChange={(e) => setContactForm({ ...contactForm, name: e.target.value })}
                           placeholder={user ? `${user.firstName} ${user.lastName}` : t.contact.placeholderName}
                           required
-                          className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#c9a730]/50"
+                          className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C8102E]/50"
                         />
                       </div>
                       <div>
@@ -144,7 +144,7 @@ export default function ContactPage() {
                           onChange={(e) => setContactForm({ ...contactForm, email: e.target.value })}
                           placeholder={user?.email || t.contact.placeholderEmail}
                           required
-                          className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#c9a730]/50"
+                          className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C8102E]/50"
                         />
                       </div>
                     </div>
@@ -155,7 +155,7 @@ export default function ContactPage() {
                         onChange={(e) => setContactForm({ ...contactForm, subject: e.target.value })}
                         placeholder={t.contact.placeholderSubject}
                         required
-                        className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#c9a730]/50"
+                        className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C8102E]/50"
                       />
                     </div>
                     <div>
@@ -166,7 +166,7 @@ export default function ContactPage() {
                         placeholder={t.contact.placeholderMessage}
                         rows={5}
                         required
-                        className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#c9a730]/50 resize-none"
+                        className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C8102E]/50 resize-none"
                       />
                     </div>
                     <button
@@ -258,7 +258,7 @@ export default function ContactPage() {
                       value={newsFirstName}
                       onChange={(e) => setNewsFirstName(e.target.value)}
                       placeholder={t.contact.placeholderFirstName}
-                      className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#c9a730]/50"
+                      className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C8102E]/50"
                     />
                   </div>
                   <div>
@@ -269,13 +269,13 @@ export default function ContactPage() {
                       onChange={(e) => setNewsEmail(e.target.value)}
                       placeholder={t.contact.placeholderEmail}
                       required
-                      className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#c9a730]/50"
+                      className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C8102E]/50"
                     />
                   </div>
                   <button
                     type="submit"
                     disabled={subscribeMutation.isPending}
-                    className="w-full px-5 py-2.5 bg-gradient-to-r from-[#c9a730] to-[#e6c200] text-primary font-bold text-sm rounded-lg hover:shadow-md disabled:opacity-50 transition-all"
+                    className="w-full px-5 py-2.5 bg-gradient-to-r from-[#C8102E] to-[#E8233E] text-primary font-bold text-sm rounded-lg hover:shadow-md disabled:opacity-50 transition-all"
                   >
                     {subscribeMutation.isPending ? (
                       <Loader2 className="h-4 w-4 animate-spin mx-auto" />

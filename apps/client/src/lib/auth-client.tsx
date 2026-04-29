@@ -3,6 +3,7 @@
 import { useSession, signOut } from "next-auth/react";
 import Link from "next/link";
 import React from "react";
+import { getMediaUrl } from "@/lib/media-url";
 
 // Clerk's useUser hook wrapper
 export function useUser() {
@@ -94,8 +95,8 @@ export function UserButton({ ...props }: { [key: string]: any }) {
         className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/20 text-primary text-sm font-bold border border-primary/30 hover:bg-primary/30 transition-all"
         title="Voir mon profil"
       >
-        {session?.user?.image ? (
-          <img src={session.user.image} alt="User" className="h-full w-full rounded-full object-cover" />
+        {(session?.user?.image || (session?.user as any)?.avatarUrl) ? (
+          <img src={getMediaUrl(session?.user?.image || (session?.user as any)?.avatarUrl) || ''} alt="User" className="h-full w-full rounded-full object-cover" />
         ) : (
           <span className="font-heading">{userInitials}</span>
         )}
@@ -118,7 +119,7 @@ export function UserProfile({ ...props }: { [key: string]: any }) {
       <p className="text-sm text-muted-foreground mb-4">Gérez vos informations de profil ici.</p>
       <button
         onClick={() => signOut({ callbackUrl: "/" })}
-        className="px-4 py-2 bg-destructive text-destructive-foreground rounded-lg test-sm font-medium"
+        className="px-4 py-2 bg-destructive text-destructive-foreground rounded-lg text-sm font-medium"
       >
         Se déconnecter
       </button>

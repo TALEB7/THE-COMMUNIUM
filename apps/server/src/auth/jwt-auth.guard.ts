@@ -27,13 +27,14 @@ export class JwtAuthGuard implements CanActivate {
     }
 
     try {
-      const secret = this.config.get<string>('JWT_SECRET') || this.config.get<string>('NEXTAUTH_SECRET') || 'fallback_secret_for_development_only';
+      const secret = this.config.get<string>('JWT_SECRET') ?? this.config.get<string>('NEXTAUTH_SECRET');
+      if (!secret) throw new Error('JWT_SECRET / NEXTAUTH_SECRET is not configured');
       const payload = await this.jwtService.verifyAsync(token, { secret });
-      
+
       (request as any)['user'] = {
         id: payload.sub,
         email: payload.email,
-        // Map the payload sub to clerkId just in case some old code still looks for clerkId on the user object
+        role: payload.role ?? 'USER',
         clerkId: payload.sub,
       };
 

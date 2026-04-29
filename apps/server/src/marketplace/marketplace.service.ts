@@ -6,6 +6,8 @@ import {
   Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { AiService } from '../ai/ai.service';
+import { RedisService } from '../redis/redis.service';
 import { CreateListingDto } from './dto/create-listing.dto';
 import { UpdateListingDto } from './dto/update-listing.dto';
 import { SearchListingsDto } from './dto/search-listings.dto';
@@ -15,7 +17,11 @@ import { CreateReviewDto } from './dto/create-review.dto';
 export class MarketplaceService {
   private readonly logger = new Logger(MarketplaceService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly aiService: AiService,
+    private readonly redis: RedisService,
+  ) {}
 
   // ==================== Listings CRUD ====================
 
@@ -56,7 +62,90 @@ export class MarketplaceService {
     });
 
     this.logger.log(`Listing created: ${listing.id} by user ${user.id}`);
+
+    // Fire-and-forget: AI tasks that don't block the response
+    this.generateAndStoreListingEmbedding(listing).catch((err) =>
+      this.logger.warn(`Failed to generate embedding for listing ${listing.id}: ${err.message}`),
+    );
+    this.logPriceAnomalyIfFlagged(listing.price, listing.categoryId, listing.id).catch((err) =>
+      this.logger.warn(`Price anomaly check failed for listing ${listing.id}: ${err.message}`),
+    );
+
     return listing;
+  }
+
+  private async generateAndStoreListingEmbedding(listing: any): Promise<void> {
+    const result = await this.aiService.embedListing({
+      listingId: listing.id,
+      title: listing.title,
+      description: listing.description,
+      tags: listing.tags ?? [],
+      category: listing.category?.name ?? '',
+    });
+
+    await this.prisma.listingEmbedding.upsert({
+      where: { listingId: listing.id },
+      create: { listingId: listing.id, embedding: result.embedding },
+      update: { embedding: result.embedding },
+    });
+
+    this.logger.log(`Embedding stored for listing ${listing.id} (${result.dimensions} dims)`);
+  }
+
+  async getSimilarListings(listingId: string, topK = 5): Promise<any[]> {
+    const CACHE_KEY = `similar_listings:${listingId}`;
+    const CACHE_TTL = 300; // 5 minutes
+
+    const cached = await this.redis.get(CACHE_KEY);
+    if (cached) return JSON.parse(cached);
+
+    const queryEmbed = await this.prisma.listingEmbedding.findUnique({
+      where: { listingId },
+    });
+    if (!queryEmbed) return [];
+
+    const listing = await this.prisma.listing.findUnique({ where: { id: listingId } });
+    if (!listing) return [];
+
+    const candidates = await this.prisma.listingEmbedding.findMany({
+      where: {
+        listing: { categoryId: listing.categoryId, status: 'ACTIVE' },
+        listingId: { not: listingId },
+      },
+      take: 200,
+    });
+
+    if (candidates.length === 0) return [];
+
+    const similar = await this.aiService.findSimilarListings({
+      listingId,
+      queryEmbedding: queryEmbed.embedding as number[],
+      candidates: candidates.map((c) => ({
+        listing_id: c.listingId,
+        embedding: c.embedding as number[],
+      })),
+      topK,
+    });
+
+    const similarIds = similar.map((s) => s.id);
+    const listings = await this.prisma.listing.findMany({
+      where: { id: { in: similarIds }, status: 'ACTIVE' },
+      include: {
+        category: true,
+        seller: {
+          select: { id: true, firstName: true, lastName: true, avatarUrl: true, isVerified: true },
+        },
+        _count: { select: { favorites: true } },
+      },
+    });
+
+    const scoreMap = new Map(similar.map((s) => [s.id, s.score]));
+    const sorted = listings.sort(
+      (a, b) => (scoreMap.get(b.id) ?? 0) - (scoreMap.get(a.id) ?? 0),
+    );
+
+    await this.redis.set(CACHE_KEY, JSON.stringify(sorted), CACHE_TTL);
+    return sorted;
   }
 
   async updateListing(clerkId: string, listingId: string, dto: UpdateListingDto) {
@@ -148,8 +237,18 @@ export class MarketplaceService {
 
   async searchListings(dto: SearchListingsDto) {
     const page = dto.page || 1;
-    const limit = dto.limit || 20;
+    const limit = Math.min(dto.limit || 20, 100); // hard cap at 100
     const skip = (page - 1) * limit;
+
+    // Cache popular searches (no free-text queries) for 5 minutes
+    const isCacheable = !dto.q;
+    const cacheKey = isCacheable
+      ? `search:${dto.category || ''}:${dto.city || ''}:${dto.condition || ''}:${dto.sort || ''}:${dto.minPrice || ''}:${dto.maxPrice || ''}:${page}:${limit}`
+      : null;
+    if (cacheKey) {
+      const cached = await this.redis.get(cacheKey);
+      if (cached) return JSON.parse(cached);
+    }
 
     const where: any = {
       status: 'ACTIVE',
@@ -215,9 +314,8 @@ export class MarketplaceService {
         where,
         include: {
           category: true,
-          seller: {
-            select: { id: true, firstName: true, lastName: true, avatarUrl: true, isVerified: true },
-          },
+          // Only expose what's needed in browse — no PII beyond verification badge
+          seller: { select: { id: true, isVerified: true } },
           _count: { select: { favorites: true } },
         },
         orderBy,
@@ -227,7 +325,7 @@ export class MarketplaceService {
       this.prisma.listing.count({ where }),
     ]);
 
-    return {
+    const result = {
       data: listings,
       meta: {
         total,
@@ -236,6 +334,10 @@ export class MarketplaceService {
         totalPages: Math.ceil(total / limit),
       },
     };
+
+    if (cacheKey) await this.redis.set(cacheKey, JSON.stringify(result), 300);
+
+    return result;
   }
 
   async getMyListings(clerkId: string, status?: string) {
@@ -386,11 +488,185 @@ export class MarketplaceService {
     return { message: 'Listing boosted for 7 days', tksCost: 10 };
   }
 
+  // ==================== AI — Price Suggestion ====================
+
+  /**
+   * Returns a suggested price range for a new listing.
+   *
+   * Pulls up to 50 recent active/sold listing prices in the same category
+   * as comparables, then delegates the statistical estimation to the AI
+   * service.  The `condition` parameter adjusts the estimate via market
+   * multipliers (NEW > LIKE_NEW > GOOD > FAIR > POOR).
+   */
+  /**
+   * Zero-shot NLP classification of a listing's title+description.
+   * Returns the best-matching category from the platform's category tree,
+   * suggested tags, and an urgency level — all without any labelled data.
+   */
+  /**
+   * Analyze sentiment of all reviews for a listing.
+   * Returns per-review sentiment + an aggregate compound score.
+   * Results are cached for 10 minutes (reviews don't change frequently).
+   */
+  /**
+   * Run fraud/fake-review detection on all reviews for a listing.
+   * Checks for temporal bursts, duplicate texts, rating anomalies,
+   * and repeat reviewers. Returns a suspicion score + human-readable flags.
+   */
+  async detectReviewFraud(listingId: string): Promise<any> {
+    const reviews = await this.prisma.listingReview.findMany({
+      where: { listingId },
+      select: { id: true, comment: true, rating: true, reviewerId: true, createdAt: true },
+    });
+
+    if (reviews.length === 0) return { is_suspicious: false, anomaly_score: 0, flags: [] };
+
+    const payload = reviews.map((r) => ({
+      text: r.comment ?? '',
+      rating: r.rating,
+      reviewer_id: r.reviewerId,
+      created_at: r.createdAt.toISOString(),
+      listing_id: listingId,
+    }));
+
+    return this.aiService.detectReviewFraud(payload, listingId);
+  }
+
+  async analyzeListingReviewSentiment(listingId: string): Promise<any> {
+    const cacheKey = `review_sentiment:${listingId}`;
+    const cached = await this.redis.get(cacheKey);
+    if (cached) return JSON.parse(cached);
+
+    const reviews = await this.prisma.listingReview.findMany({
+      where: { listingId },
+      select: { id: true, comment: true, rating: true },
+    });
+
+    const texts = reviews.map((r) => r.comment ?? '').filter(Boolean);
+    if (texts.length === 0) return { results: [], avg_compound: 0 };
+
+    const result = await this.aiService.analyzeSentiment(texts);
+
+    // Zip results back with review ids
+    const enriched = reviews
+      .filter((r) => r.comment)
+      .map((r, i) => ({ reviewId: r.id, rating: r.rating, ...result.results[i] }));
+
+    const response = { results: enriched, avg_compound: result.avg_compound };
+    await this.redis.set(cacheKey, JSON.stringify(response), 600);
+    return response;
+  }
+
+  async classifyListing(title: string, description: string): Promise<any> {
+    const categories = await this.prisma.category.findMany({
+      select: { id: true, name: true },
+    });
+    const categoryNames = categories.map((c) => c.name);
+
+    const result = await this.aiService.classifyListing({
+      title,
+      description,
+      availableCategories: categoryNames,
+    });
+
+    // Resolve the category id from the predicted name
+    const matched = categories.find((c) => c.name === result.predicted_category);
+    return { ...result, categoryId: matched?.id ?? null };
+  }
+
+  /**
+   * Check whether a listing's price is a statistical anomaly for its category.
+   * Accepts either a listing id (fetches price + category from DB) or raw values.
+   */
+  async checkPriceAnomaly(listingId: string): Promise<any> {
+    const listing = await this.prisma.listing.findUnique({
+      where: { id: listingId },
+      select: { price: true, categoryId: true },
+    });
+    if (!listing) throw new NotFoundException('Listing not found');
+
+    const comparables = await this.prisma.listing.findMany({
+      where: { categoryId: listing.categoryId, status: 'ACTIVE', id: { not: listingId } },
+      select: { price: true },
+      take: 100,
+    });
+
+    return this.aiService.detectPriceAnomaly({
+      price: listing.price,
+      comparablePrices: comparables.map((l) => l.price),
+    });
+  }
+
+  private async logPriceAnomalyIfFlagged(
+    price: number,
+    categoryId: string,
+    listingId: string,
+  ): Promise<void> {
+    const comparables = await this.prisma.listing.findMany({
+      where: { categoryId, status: 'ACTIVE', id: { not: listingId } },
+      select: { price: true },
+      take: 100,
+    });
+    const result = await this.aiService.detectPriceAnomaly({
+      price,
+      comparablePrices: comparables.map((l) => l.price),
+    });
+    if (result.is_anomaly) {
+      this.logger.warn(
+        `Price anomaly detected for listing ${listingId}: ` +
+        `price=${price} direction=${result.direction} ` +
+        `z=${result.z_score} modz=${result.modified_z_score} ` +
+        `market_median=${result.market_median}`,
+      );
+    }
+  }
+
+  async predictListingEta(listingId: string, buyerCity?: string): Promise<any> {
+    const listing = await this.prisma.listing.findUnique({
+      where: { id: listingId },
+      select: {
+        city: true,
+        condition: true,
+        categoryId: true,
+        category: { select: { name: true } },
+        sellerId: true,
+      },
+    });
+    if (!listing) throw new NotFoundException('Listing not found');
+
+    const sellerListingCount = await this.prisma.listing.count({
+      where: { sellerId: listing.sellerId, status: { in: ['ACTIVE', 'SOLD'] } },
+    });
+
+    return this.aiService.predictEta({
+      categoryName:        listing.category?.name,
+      sellerCity:          listing.city ?? undefined,
+      buyerCity,
+      condition:           listing.condition,
+      sellerListingCount,
+    });
+  }
+
+  async suggestPrice(categoryId: string, condition: string): Promise<any> {
+    const recent = await this.prisma.listing.findMany({
+      where: { categoryId, status: 'ACTIVE' },
+      select: { price: true },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+    });
+
+    const comparablePrices = recent.map((l) => l.price);
+    return this.aiService.suggestPrice({ condition, comparablePrices });
+  }
+
   // ==================== Helpers ====================
 
   private async findUserByClerkId(clerkId: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { clerkId },
+    // JWT sub can be either the local user.id or the clerkId depending on auth method
+    const user = await this.prisma.user.findFirst({
+      where: {
+        OR: [{ clerkId }, { id: clerkId }],
+      },
     });
     if (!user) throw new NotFoundException('User not found');
     return user;

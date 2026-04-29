@@ -1,40 +1,39 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useUser, UserProfile } from "@/lib/auth-client";
 import { useT } from '@/lib/i18n';
+import { api } from '@/lib/api';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { useToast } from '@/hooks/use-toast';
+import { Loader2 } from 'lucide-react';
 
 export default function SettingsPage() {
   const { user } = useUser();
   const { t } = useT();
+  const { toast } = useToast();
   const [tab, setTab] = useState<"account" | "notifications">("account");
-  const [prefs, setPrefs] = useState<Record<string, boolean>>({});
-  const [saving, setSaving] = useState(false);
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api";
 
-  useEffect(() => {
-    if (!user?.id) return;
-    fetch(`${apiUrl}/notifications/${user.id}/preferences`)
-      .then((r) => r.json())
-      .then(setPrefs)
-      .catch(() => {});
-  }, [user?.id, apiUrl]);
+  const { data: prefs = {}, isLoading: prefsLoading } = useQuery<Record<string, boolean>>({
+    queryKey: ['notification-prefs', user?.id],
+    queryFn: () => api.get(`/notifications/${user!.id}/preferences`).then((r) => r.data),
+    enabled: !!user?.id && tab === 'notifications',
+  });
 
-  const savePrefs = async () => {
-    if (!user?.id) return;
-    setSaving(true);
-    try {
-      await fetch(`${apiUrl}/notifications/${user.id}/preferences`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(prefs),
-      });
-    } catch {}
-    setSaving(false);
-  };
+  const [localPrefs, setLocalPrefs] = useState<Record<string, boolean>>({});
+  const mergedPrefs = { ...prefs, ...localPrefs };
+
+  const savePrefs = useMutation({
+    mutationFn: () => api.patch(`/notifications/${user?.id}/preferences`, mergedPrefs),
+    onSuccess: () => {
+      toast({ title: t.common.save, description: 'Préférences mises à jour.' });
+      setLocalPrefs({});
+    },
+    onError: () => toast({ title: 'Erreur', description: 'Impossible de sauvegarder.', variant: 'destructive' }),
+  });
 
   const togglePref = (key: string) => {
-    setPrefs((p) => ({ ...p, [key]: !p[key] }));
+    setLocalPrefs((p) => ({ ...p, [key]: !mergedPrefs[key] }));
   };
 
   const prefGroups = [
@@ -65,16 +64,19 @@ export default function SettingsPage() {
   ];
 
   return (
-    <div className="max-w-3xl mx-auto">
-      <h1 className="text-2xl font-bold text-foreground mb-6">{t.settings.title}</h1>
+    <div className="max-w-3xl mx-auto space-y-6">
+      <h1 className="text-2xl font-bold text-primary font-heading">⚙️ {t.settings.title}</h1>
 
-      <div className="flex gap-2 mb-6">
+      {/* Tab pills */}
+      <div className="flex gap-1 p-1 bg-muted rounded-xl w-fit">
         {(["account", "notifications"] as const).map((tabKey) => (
           <button
             key={tabKey}
             onClick={() => setTab(tabKey)}
-            className={`px-4 py-2 text-sm font-medium rounded-lg ${
-              tab === tabKey ? "bg-blue-600 text-white" : "bg-card text-foreground/80 border border-border"
+            className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all ${
+              tab === tabKey
+                ? "bg-card text-primary shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
             }`}
           >
             {tabKey === "account" ? t.settings.accountTab : t.settings.notificationsTab}
@@ -82,53 +84,62 @@ export default function SettingsPage() {
         ))}
       </div>
 
+      {/* Account */}
       {tab === "account" && (
         <div className="bg-card rounded-xl border border-border p-6">
           <UserProfile
             appearance={{
-              elements: {
-                rootBox: "w-full",
-                card: "shadow-none border-0 p-0",
-              },
+              elements: { rootBox: "w-full", card: "shadow-none border-0 p-0" },
             }}
           />
         </div>
       )}
 
+      {/* Notifications */}
       {tab === "notifications" && (
         <div className="bg-card rounded-xl border border-border p-6 space-y-6">
-          {prefGroups.map((group) => (
-            <div key={group.title}>
-              <h3 className="text-sm font-semibold text-foreground mb-3">{group.title}</h3>
-              <div className="space-y-2">
-                {group.items.map((item) => (
-                  <div key={item.key} className="flex items-center justify-between py-2">
-                    <span className="text-sm text-muted-foreground">{item.label}</span>
-                    <button
-                      onClick={() => togglePref(item.key)}
-                      className={`w-10 h-6 rounded-full transition-colors ${
-                        prefs[item.key] ? "bg-blue-600" : "bg-muted"
-                      }`}
-                    >
-                      <div
-                        className={`w-4 h-4 bg-card rounded-full shadow transition-transform ${
-                          prefs[item.key] ? "translate-x-5" : "translate-x-1"
-                        }`}
-                      />
-                    </button>
-                  </div>
-                ))}
-              </div>
+          {prefsLoading ? (
+            <div className="flex justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
             </div>
-          ))}
+          ) : (
+            <>
+              {prefGroups.map((group) => (
+                <div key={group.title}>
+                  <h3 className="text-sm font-semibold text-foreground mb-3">{group.title}</h3>
+                  <div className="space-y-2">
+                    {group.items.map((item) => (
+                      <div key={item.key} className="flex items-center justify-between py-2">
+                        <span className="text-sm text-muted-foreground">{item.label}</span>
+                        <button
+                          onClick={() => togglePref(item.key)}
+                          className={`relative w-10 h-6 rounded-full transition-colors ${
+                            mergedPrefs[item.key] ? "bg-primary" : "bg-muted"
+                          }`}
+                          role="switch"
+                          aria-checked={!!mergedPrefs[item.key]}
+                        >
+                          <div
+                            className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${
+                              mergedPrefs[item.key] ? "translate-x-5" : "translate-x-1"
+                            }`}
+                          />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
 
-          <button
-            onClick={savePrefs}
-            disabled={saving}
-            className="px-6 py-2.5 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 disabled:bg-muted"
-          >
-            {saving ? t.common.saving : t.common.save}
-          </button>
+              <button
+                onClick={() => savePrefs.mutate()}
+                disabled={savePrefs.isPending || Object.keys(localPrefs).length === 0}
+                className="ygo-btn-gold disabled:opacity-50"
+              >
+                {savePrefs.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : t.common.save}
+              </button>
+            </>
+          )}
         </div>
       )}
     </div>

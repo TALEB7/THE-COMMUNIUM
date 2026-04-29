@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useUser } from "@/lib/auth-client";
 import { useT } from "@/lib/i18n";
+import { api } from "@/lib/api";
 
 interface Stats {
   users: { total: number; new7d: number; new30d: number };
@@ -27,7 +28,7 @@ interface UserRow {
   _count: { listings: number; payments: number };
 }
 
-type Tab = "overview" | "users" | "reports" | "testimonials" | "newsletter" | "contact";
+type Tab = "overview" | "users" | "reports" | "testimonials" | "newsletter" | "contact" | "ai-risk";
 
 export default function AdminDashboard() {
   const { user } = useUser();
@@ -36,7 +37,6 @@ export default function AdminDashboard() {
   const [tab, setTab] = useState<Tab>("overview");
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api";
 
   // Phase 7 state
   const [testimonials, setTestimonials] = useState<any[]>([]);
@@ -44,19 +44,23 @@ export default function AdminDashboard() {
   const [contactMessages, setContactMessages] = useState<any[]>([]);
   const [contactStats, setContactStats] = useState<any>(null);
 
+  // AI Risk state
+  const [churnData, setChurnData] = useState<any>(null);
+  const [churnLoading, setChurnLoading] = useState(false);
+  const [churnRiskFilter, setChurnRiskFilter] = useState<string>('');
+
   const { t } = useT();
 
   useEffect(() => {
     if (!user?.id) return;
-    const headers = { "x-admin-id": user.id };
 
     Promise.all([
-      fetch(`${apiUrl}/admin/dashboard`, { headers }).then((r) => r.ok ? r.json() : null),
-      fetch(`${apiUrl}/admin/users`, { headers }).then((r) => r.ok ? r.json() : null),
-      fetch(`${apiUrl}/testimonials/admin/all`).then((r) => r.ok ? r.json() : null),
-      fetch(`${apiUrl}/newsletter/subscribers/stats`).then((r) => r.ok ? r.json() : null),
-      fetch(`${apiUrl}/newsletter/contact`).then((r) => r.ok ? r.json() : null),
-      fetch(`${apiUrl}/newsletter/contact/stats`).then((r) => r.ok ? r.json() : null),
+      api.get('/admin/dashboard').then((r) => r.data).catch(() => null),
+      api.get('/admin/users').then((r) => r.data).catch(() => null),
+      api.get('/testimonials/admin/all').then((r) => r.data).catch(() => null),
+      api.get('/newsletter/subscribers/stats').then((r) => r.data).catch(() => null),
+      api.get('/newsletter/contact').then((r) => r.data).catch(() => null),
+      api.get('/newsletter/contact/stats').then((r) => r.data).catch(() => null),
     ])
       .then(([s, u, tData, ns, cm, cs]) => {
         if (s) setStats(s);
@@ -66,28 +70,22 @@ export default function AdminDashboard() {
         if (cm) setContactMessages(cm.data || []);
         if (cs) setContactStats(cs);
       })
-      .catch(() => {})
       .finally(() => setLoading(false));
-  }, [user?.id, apiUrl]);
+  }, [user?.id]);
 
   const handleTestimonialAction = async (id: string, action: "approve" | "reject" | "feature") => {
     try {
-      await fetch(`${apiUrl}/testimonials/${id}/${action}`, { method: "PATCH" });
-      // Refresh
-      const res = await fetch(`${apiUrl}/testimonials/admin/all`);
-      if (res.ok) { const d = await res.json(); setTestimonials(d.data || []); }
+      await api.patch(`/testimonials/${id}/${action}`);
+      const { data } = await api.get('/testimonials/admin/all');
+      setTestimonials(data.data || []);
     } catch {}
   };
 
   const handleContactAction = async (id: string, status: string) => {
     try {
-      await fetch(`${apiUrl}/newsletter/contact/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status }),
-      });
-      const res = await fetch(`${apiUrl}/newsletter/contact`);
-      if (res.ok) { const d = await res.json(); setContactMessages(d.data || []); }
+      await api.patch(`/newsletter/contact/${id}`, { status });
+      const { data } = await api.get('/newsletter/contact');
+      setContactMessages(data.data || []);
     } catch {}
   };
 
@@ -117,7 +115,19 @@ export default function AdminDashboard() {
     { key: "newsletter", label: t.admin.tabNewsletter },
     { key: "contact", label: t.admin.tabContact },
     { key: "reports", label: t.admin.tabReports },
+    { key: "ai-risk", label: "IA Risque" },
   ];
+
+  const loadChurnData = async (riskFilter = '') => {
+    setChurnLoading(true);
+    try {
+      const { data } = await api.get('/analytics/churn-risk', {
+        params: riskFilter ? { risk: riskFilter } : {},
+      });
+      setChurnData(data);
+    } catch {}
+    finally { setChurnLoading(false); }
+  };
 
   return (
     <div>
@@ -127,7 +137,10 @@ export default function AdminDashboard() {
           {tabs.map((tabItem) => (
             <button
               key={tabItem.key}
-              onClick={() => setTab(tabItem.key)}
+              onClick={() => {
+                setTab(tabItem.key);
+                if (tabItem.key === 'ai-risk' && !churnData) loadChurnData();
+              }}
               className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
                 tab === tabItem.key
                   ? "bg-primary text-white"
@@ -164,13 +177,13 @@ export default function AdminDashboard() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={t.admin.searchUser}
-              className="px-4 py-2.5 bg-card border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#c9a730]/50 w-full max-w-md"
+              className="px-4 py-2.5 bg-card border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#C8102E]/50 w-full max-w-md"
             />
           </div>
 
           <div className="bg-card rounded-xl border border-border overflow-hidden">
             <table className="w-full text-sm">
-              <thead className="bg-accent border-b border-[#d4c088]/20">
+              <thead className="bg-accent border-b border-[#C8102E]/20">
                 <tr>
                   <th className="text-left px-4 py-3 font-medium text-muted-foreground">{t.admin.tableHeaders.name}</th>
                   <th className="text-left px-4 py-3 font-medium text-muted-foreground">{t.admin.tableHeaders.email}</th>
@@ -363,6 +376,119 @@ export default function AdminDashboard() {
         <div className="bg-card rounded-xl p-12 text-center border border-border">
           <p className="text-4xl mb-4">⚠️</p>
           <p className="text-muted-foreground">{t.admin.noReports}</p>
+        </div>
+      )}
+
+      {/* ── AI Risk (Churn + CLV) ── */}
+      {tab === "ai-risk" && (
+        <div className="space-y-4">
+          {/* Summary KPIs */}
+          {churnData && (
+            <div className="grid grid-cols-3 gap-4">
+              <div className="bg-red-50 border border-red-200 rounded-xl p-5 text-center">
+                <p className="text-3xl font-bold text-red-600">{churnData.high_risk_count}</p>
+                <p className="text-sm text-red-700 font-medium mt-1">Risque élevé</p>
+              </div>
+              <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-5 text-center">
+                <p className="text-3xl font-bold text-yellow-600">{churnData.medium_risk_count}</p>
+                <p className="text-sm text-yellow-700 font-medium mt-1">Risque moyen</p>
+              </div>
+              <div className="bg-green-50 border border-green-200 rounded-xl p-5 text-center">
+                <p className="text-3xl font-bold text-green-600">{churnData.low_risk_count}</p>
+                <p className="text-sm text-green-700 font-medium mt-1">Risque faible</p>
+              </div>
+            </div>
+          )}
+
+          {/* Controls */}
+          <div className="flex items-center gap-2">
+            {(['', 'HIGH', 'MEDIUM', 'LOW'] as const).map((f) => (
+              <button
+                key={f}
+                onClick={() => { setChurnRiskFilter(f); loadChurnData(f); }}
+                className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors border ${
+                  churnRiskFilter === f ? 'bg-primary text-white border-primary' : 'bg-card text-muted-foreground border-border hover:bg-accent'
+                }`}
+              >
+                {f === '' ? 'Tous' : f === 'HIGH' ? 'Élevé' : f === 'MEDIUM' ? 'Moyen' : 'Faible'}
+              </button>
+            ))}
+            <button
+              onClick={() => loadChurnData(churnRiskFilter)}
+              className="ml-auto px-3 py-1.5 text-xs font-medium rounded-lg bg-accent border border-border hover:bg-primary hover:text-white transition-colors"
+            >
+              Actualiser
+            </button>
+          </div>
+
+          {/* Table */}
+          {churnLoading ? (
+            <div className="flex justify-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+            </div>
+          ) : !churnData || churnData.predictions.length === 0 ? (
+            <div className="bg-card rounded-xl p-12 text-center border border-border">
+              <p className="text-4xl mb-4">🤖</p>
+              <p className="text-muted-foreground">Aucune donnée disponible. Cliquez sur Actualiser.</p>
+            </div>
+          ) : (
+            <div className="bg-card rounded-xl border border-border overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-accent border-b border-border">
+                  <tr>
+                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">Utilisateur</th>
+                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">Risque</th>
+                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">Score</th>
+                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">CLV</th>
+                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">R/F/M</th>
+                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">Actions recommandées</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {churnData.predictions.map((p: any) => (
+                    <tr key={p.user_id} className="border-b border-border hover:bg-accent">
+                      <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{p.user_id.slice(0, 12)}…</td>
+                      <td className="px-4 py-3">
+                        <span className={`px-2 py-1 rounded-lg text-xs font-bold ${
+                          p.risk_level === 'HIGH' ? 'bg-red-100 text-red-700' :
+                          p.risk_level === 'MEDIUM' ? 'bg-yellow-100 text-yellow-700' :
+                          'bg-green-100 text-green-700'
+                        }`}>
+                          {p.risk_level === 'HIGH' ? 'ÉLEVÉ' : p.risk_level === 'MEDIUM' ? 'MOYEN' : 'FAIBLE'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <div className="w-16 h-1.5 rounded-full bg-muted overflow-hidden">
+                            <div
+                              className={`h-full rounded-full ${p.churn_score >= 0.65 ? 'bg-red-500' : p.churn_score >= 0.35 ? 'bg-yellow-500' : 'bg-green-500'}`}
+                              style={{ width: `${Math.round(p.churn_score * 100)}%` }}
+                            />
+                          </div>
+                          <span className="text-xs text-muted-foreground">{Math.round(p.churn_score * 100)}%</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={`text-xs font-medium ${p.clv_tier === 'HIGH' ? 'text-green-600' : p.clv_tier === 'MEDIUM' ? 'text-amber-600' : 'text-muted-foreground'}`}>
+                          {p.clv_estimate > 0 ? `${p.clv_estimate.toLocaleString('fr-MA')} Dhs` : '—'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-xs text-muted-foreground">{p.rfm_recency}/{p.rfm_frequency}/{p.rfm_monetary}</td>
+                      <td className="px-4 py-3">
+                        <div className="flex flex-wrap gap-1">
+                          {p.recommended_actions.slice(0, 2).map((a: string) => (
+                            <span key={a} className="px-1.5 py-0.5 rounded bg-muted text-xs text-foreground/70">
+                              {a.replace(/_/g, ' ')}
+                            </span>
+                          ))}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
     </div>

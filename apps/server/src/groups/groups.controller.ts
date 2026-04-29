@@ -81,4 +81,14 @@ export class GroupsController {
   ) {
     return this.service.addGroupComment({ ...body, postId });
   }
+
+  // ── Likes ──
+
+  @Post('posts/:postId/like')
+  toggleLike(
+    @Param('postId') postId: string,
+    @Body('userId') userId: string,
+  ) {
+    return this.service.toggleLike(postId, userId);
+  }
 }

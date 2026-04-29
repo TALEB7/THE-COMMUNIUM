@@ -18,12 +18,12 @@ interface RoomParticipant {
 }
 
 @WebSocketGateway({
-  cors: { origin: '*' },
+  cors: { origin: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000', credentials: true },
   namespace: '/meetings',
 })
 export class MeetingsGateway implements OnGatewayDisconnect {
   @WebSocketServer()
-  server: Server;
+  server!: Server;
 
   // meetingId -> Map<userId, RoomParticipant>
   private rooms = new Map<string, Map<string, RoomParticipant>>();
@@ -107,7 +107,7 @@ export class MeetingsGateway implements OnGatewayDisconnect {
 
   @SubscribeMessage('offer')
   handleOffer(
-    @ConnectedSocket() client: Socket,
+    @ConnectedSocket() _client: Socket,
     @MessageBody() data: { meetingId: string; to: string; from: string; offer: any },
   ) {
     // Find target socket
@@ -123,7 +123,7 @@ export class MeetingsGateway implements OnGatewayDisconnect {
 
   @SubscribeMessage('answer')
   handleAnswer(
-    @ConnectedSocket() client: Socket,
+    @ConnectedSocket() _client: Socket,
     @MessageBody() data: { meetingId: string; to: string; from: string; answer: any },
   ) {
     const room = this.rooms.get(data.meetingId);
@@ -138,7 +138,7 @@ export class MeetingsGateway implements OnGatewayDisconnect {
 
   @SubscribeMessage('ice-candidate')
   handleIceCandidate(
-    @ConnectedSocket() client: Socket,
+    @ConnectedSocket() _client: Socket,
     @MessageBody() data: { meetingId: string; to: string; from: string; candidate: any },
   ) {
     const room = this.rooms.get(data.meetingId);

@@ -4,29 +4,33 @@ import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Mail, Lock, ArrowRight, Loader2 } from "lucide-react";
+import { Mail, Lock, ArrowRight, Loader2, Eye, EyeOff } from "lucide-react";
+
+const inp = [
+  "w-full h-11 rounded-xl text-sm transition focus:outline-none",
+  "bg-gray-100 border border-gray-200 text-gray-900 placeholder:text-gray-400",
+  "focus:border-[#C8102E]/60 focus:ring-1 focus:ring-[#C8102E]/20",
+  "dark:bg-white/[0.05] dark:border-white/[0.08] dark:text-white dark:placeholder:text-white/20",
+  "dark:focus:border-[#C8102E]/60 dark:focus:bg-white/[0.07]",
+].join(" ");
 
 export default function SignInPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
     setError("");
-
     const formData = new FormData(e.currentTarget);
-    const email = formData.get("email") as string;
-    const password = formData.get("password") as string;
-
     try {
       const res = await signIn("credentials", {
         redirect: false,
-        email,
-        password,
+        email: formData.get("email") as string,
+        password: formData.get("password") as string,
       });
-
       if (res?.error) {
         setError("Email ou mot de passe incorrect");
         setLoading(false);
@@ -34,92 +38,98 @@ export default function SignInPage() {
         router.push("/dashboard");
         router.refresh();
       }
-    } catch (err) {
+    } catch {
       setError("Une erreur est survenue");
       setLoading(false);
     }
   };
 
   return (
-    <div className="flex flex-col items-center w-full max-w-md mx-auto">
-      <div className="mb-8 text-center">
-        <h1 className="text-3xl font-bold text-foreground font-heading tracking-tight mb-2">
-          Bon retour
+    <div className="space-y-7">
+      {/* Heading */}
+      <div>
+        <h1 className="text-[1.9rem] font-extrabold text-gray-900 dark:text-white leading-tight tracking-tight">
+          Bon retour 👋
         </h1>
-        <p className="text-muted-foreground">
+        <p className="mt-2 text-sm text-gray-500 dark:text-white/40">
           Connectez-vous pour accéder à votre espace The Communium
         </p>
       </div>
 
-      <div className="ygo-card w-full rounded-2xl p-8 relative overflow-hidden">
-        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-gold to-primary opacity-80" />
-        
+      {/* Form card */}
+      <div className="rounded-2xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#13141a] p-7 shadow-md dark:shadow-black/60 relative overflow-hidden">
+        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#C8102E]/50 to-transparent" />
+
         <form onSubmit={handleSubmit} className="space-y-5">
           {error && (
-            <div className="p-3 text-sm bg-destructive/10 text-destructive border border-destructive/20 rounded-lg">
-              {error}
+            <div className="flex items-center gap-2 p-3 text-sm bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-500/20 rounded-xl">
+              ⚠ {error}
             </div>
           )}
-          
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground">Adresse Email</label>
+
+          {/* Email */}
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-bold text-gray-400 dark:text-white/40 uppercase tracking-widest">
+              Adresse Email
+            </label>
             <div className="relative">
-              <Mail className="absolute z-10 left-3 top-2.5 h-5 w-5 text-muted-foreground" />
-              <input 
-                name="email"
-                type="email" 
-                required
-                className="form-input pl-10 h-11"
-                placeholder="vous@exemple.com"
-                defaultValue="demo@thecommunium.com"
+              <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-white/25" />
+              <input
+                name="email" type="email" required autoComplete="email"
+                defaultValue="demo@thecommunium.com" placeholder="vous@exemple.com"
+                className={`${inp} pl-10 pr-4`}
               />
             </div>
           </div>
 
-          <div className="space-y-2">
+          {/* Password */}
+          <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <label className="text-sm font-medium text-foreground">Mot de Passe</label>
-              <Link href="#" className="text-xs text-primary hover:text-gold transition-colors">
+              <label className="text-[11px] font-bold text-gray-400 dark:text-white/40 uppercase tracking-widest">
+                Mot de Passe
+              </label>
+              <Link href="#" className="text-[11px] text-[#C8102E] hover:text-[#A60D25] transition">
                 Mot de passe oublié ?
               </Link>
             </div>
             <div className="relative">
-              <Lock className="absolute z-10 left-3 top-2.5 h-5 w-5 text-muted-foreground" />
-              <input 
-                name="password"
-                type="password" 
-                required
-                className="form-input pl-10 h-11"
-                placeholder="••••••••"
-                defaultValue="password123"
+              <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-white/25" />
+              <input
+                name="password" type={showPassword ? "text" : "password"} required
+                autoComplete="current-password" defaultValue="password123" placeholder="••••••••"
+                className={`${inp} pl-10 pr-10`}
               />
+              <button type="button" onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-white/25 hover:text-gray-600 dark:hover:text-white/50 transition">
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
             </div>
           </div>
 
-          <button 
-            type="submit" 
-            disabled={loading}
-            className="ygo-btn-gold w-full h-12 mt-4 flex items-center justify-center space-x-2"
-          >
-            {loading ? (
-              <Loader2 className="h-5 w-5 animate-spin text-black" />
-            ) : (
-              <>
-                <span>Se connecter</span>
-                <ArrowRight className="h-4 w-4" />
-              </>
-            )}
+          {/* Submit */}
+          <button type="submit" disabled={loading}
+            className="w-full h-11 mt-1 flex items-center justify-center gap-2 rounded-xl font-bold text-sm transition-all
+              bg-gradient-to-r from-[#C8102E] to-[#E8233E] text-white hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-[#C8102E]/20">
+            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <>Se connecter <ArrowRight className="h-4 w-4" /></>}
           </button>
         </form>
 
-        <div className="mt-8 pt-6 border-t border-border flex flex-col items-center">
-          <p className="text-sm text-muted-foreground">
-            Vous n'avez pas de compte ?{" "}
-            <Link href="/sign-up" className="text-primary font-semibold hover:text-gold transition-colors">
-              Postulez pour rejoindre
-            </Link>
-          </p>
+        {/* Divider */}
+        <div className="relative my-6">
+          <div className="absolute inset-0 flex items-center">
+            <span className="w-full border-t border-gray-200 dark:border-white/[0.06]" />
+          </div>
+          <div className="relative flex justify-center text-[11px] uppercase tracking-widest">
+            <span className="bg-white dark:bg-[#13141a] px-3 text-gray-400 dark:text-white/25">ou</span>
+          </div>
         </div>
+
+        <p className="text-center text-sm text-gray-500 dark:text-white/35">
+          Pas encore membre ?{" "}
+          <Link href="/sign-up" className="font-bold text-[#C8102E] hover:text-[#A60D25] transition">
+            Créer un compte
+          </Link>
+        </p>
       </div>
     </div>
   );

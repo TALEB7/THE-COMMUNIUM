@@ -213,7 +213,7 @@ export default function CompanyCreationPage() {
                       className={`p-4 rounded-lg border-2 text-left transition ${
                         form.legalForm === lf.value
                           ? 'border-primary bg-accent'
-                          : 'border-border hover:border-[#d4c088]'
+                          : 'border-border hover:border-[#C8102E]'
                       }`}
                     >
                       <span className="font-bold text-sm text-primary">{lf.label}</span>
@@ -305,7 +305,7 @@ export default function CompanyCreationPage() {
                       className={`px-6 py-3 rounded-lg border-2 transition ${
                         form.taxRegime === tr.value
                           ? 'border-primary bg-accent'
-                          : 'border-border hover:border-[#d4c088]'
+                          : 'border-border hover:border-[#C8102E]'
                       }`}
                     >
                       <span className="font-bold text-sm text-primary">{tr.label}</span>
@@ -424,7 +424,7 @@ export default function CompanyCreationPage() {
               <button
                 onClick={handleSubmit}
                 disabled={saveMutation.isPending || submitMutation.isPending}
-                className="flex items-center gap-2 px-6 py-2 text-sm font-semibold bg-[#c9a730] text-white rounded-lg hover:bg-[#b8962c] disabled:opacity-50 transition"
+                className="flex items-center gap-2 px-6 py-2 text-sm font-semibold bg-[#C8102E] text-white rounded-lg hover:bg-[#A60D25] disabled:opacity-50 transition"
               >
                 {submitMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                 Soumettre la demande

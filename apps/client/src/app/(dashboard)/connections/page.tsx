@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/lib/auth-client';
 import { api } from '@/lib/api';
+import { getMediaUrl } from '@/lib/media-url';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -110,7 +111,7 @@ export default function ConnectionsPage() {
   const renderUser = (user: any) => (
     <div className="flex items-center gap-3">
       <img
-        src={user?.avatarUrl || '/default-avatar.png'}
+        src={getMediaUrl(user?.avatarUrl) || '/default-avatar.png'}
         alt=""
         className="w-11 h-11 rounded-full border-2 border-border object-cover"
       />
@@ -144,7 +145,7 @@ export default function ConnectionsPage() {
               <Icon className="h-3.5 w-3.5" />
               {tabItem.label}
               {tabItem.count !== undefined && tabItem.count > 0 && (
-                <Badge className="bg-[#c9a730] text-white text-[10px] px-1.5 py-0 ml-1">{tabItem.count}</Badge>
+                <Badge className="bg-[#C8102E] text-white text-[10px] px-1.5 py-0 ml-1">{tabItem.count}</Badge>
               )}
             </button>
           );
@@ -205,7 +206,7 @@ export default function ConnectionsPage() {
                     <button
                       onClick={() => respondMutation.mutate({ id: conn.id, action: 'accept' })}
                       disabled={respondMutation.isPending}
-                      className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold bg-[#c9a730] text-white rounded-lg hover:bg-[#b8962c] transition"
+                      className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold bg-[#C8102E] text-white rounded-lg hover:bg-[#A60D25] transition"
                     >
                       <Check className="h-3 w-3" />
                       Accepter

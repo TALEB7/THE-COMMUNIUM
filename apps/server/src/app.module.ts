@@ -1,9 +1,10 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { ServeStaticModule } from '@nestjs/serve-static';
-import { join } from 'path';
 import * as path from 'path';
 import { PrismaModule } from './prisma/prisma.module';
+import { RedisModule } from './redis/redis.module';
 import { HealthController } from './health.controller';
 import { UploadsModule } from './uploads/uploads.module';
 
@@ -21,6 +22,7 @@ import { AnalyticsModule } from './analytics/analytics.module';
 import { ReportsModule } from './reports/reports.module';
 import { SearchModule } from './search/search.module';
 import { RecommendationsModule } from './recommendations/recommendations.module';
+import { AiModule } from './ai/ai.module';
 import { CompanyCreationModule } from './company-creation/company-creation.module';
 import { DocumentsModule } from './documents/documents.module';
 
@@ -32,7 +34,10 @@ import { ContentModule } from './content/content.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    // Rate limiting: 100 req / 60 s per IP globally; sensitive routes can override with @Throttle()
+    ThrottlerModule.forRoot([{ ttl: 60_000, limit: 100 }]),
     PrismaModule,
+    RedisModule,
 
     // Core
     AuthModule,
@@ -57,6 +62,7 @@ import { ContentModule } from './content/content.module';
     ReportsModule,
     SearchModule,
     RecommendationsModule,
+    AiModule,
     CompanyCreationModule,
     DocumentsModule,
 

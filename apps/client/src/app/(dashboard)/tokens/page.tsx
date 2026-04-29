@@ -76,7 +76,7 @@ export default function TokensPage() {
           {t.tokens.title}
         </h1>
         <p className="text-muted-foreground">{t.tokens.description}</p>
-        <div className="h-0.5 bg-gradient-to-r from-[#c9a730] via-[#e6c200] to-transparent max-w-[120px] mt-1" />
+        <div className="h-0.5 bg-gradient-to-r from-[#C8102E] via-[#E8233E] to-transparent max-w-[120px] mt-1" />
       </div>
 
       {/* Balance + Daily Reward */}
@@ -104,7 +104,7 @@ export default function TokensPage() {
                     </span>
                   </div>
                 </div>
-                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#c9a730] to-[#e6c200] flex items-center justify-center">
+                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#C8102E] to-[#E8233E] flex items-center justify-center">
                   <Star className="h-8 w-8 text-white" />
                 </div>
               </div>
@@ -120,7 +120,7 @@ export default function TokensPage() {
             <button
               onClick={() => dailyMutation.mutate()}
               disabled={dailyMutation.isPending}
-              className="px-6 py-2.5 bg-gradient-to-r from-[#c9a730] to-[#e6c200] text-primary font-bold text-sm rounded-lg hover:shadow-md transition-all disabled:opacity-50"
+              className="px-6 py-2.5 bg-gradient-to-r from-[#C8102E] to-[#E8233E] text-primary font-bold text-sm rounded-lg hover:shadow-md transition-all disabled:opacity-50"
             >
               {dailyMutation.isPending ? (
                 <Loader2 className="h-4 w-4 animate-spin" />

@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth-server";
 import { redirect } from "next/navigation";
 import { Sidebar } from "@/components/layout/sidebar";
 import { DashboardHeader } from "@/components/layout/dashboard-header";
+import { ErrorBoundary } from "@/components/ui/error-boundary";
 
 export default async function DashboardLayout({
   children,
@@ -20,7 +21,9 @@ export default async function DashboardLayout({
 
       <div className="flex">
         <Sidebar />
-        <main className="flex-1 p-6 lg:p-8">{children}</main>
+        <main className="flex-1 p-6 lg:p-8">
+          <ErrorBoundary>{children}</ErrorBoundary>
+        </main>
       </div>
     </div>
   );

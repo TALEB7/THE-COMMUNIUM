@@ -16,7 +16,7 @@ import { CreateListingDto } from './dto/create-listing.dto';
 import { UpdateListingDto } from './dto/update-listing.dto';
 import { SearchListingsDto } from './dto/search-listings.dto';
 import { CreateReviewDto } from './dto/create-review.dto';
-import { ClerkAuthGuard } from '../common/guards/clerk-auth.guard';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 
 @ApiTags('marketplace')
@@ -30,6 +30,21 @@ export class MarketplaceController {
   @ApiOperation({ summary: 'Search & browse marketplace listings' })
   searchListings(@Query() dto: SearchListingsDto) {
     return this.marketplaceService.searchListings(dto);
+  }
+
+  @Get('listings/classify')
+  @ApiOperation({ summary: 'NLP auto-classify a listing title+description → category + tags' })
+  classifyListing(@Query('title') title: string, @Query('description') description: string) {
+    return this.marketplaceService.classifyListing(title ?? '', description ?? '');
+  }
+
+  @Get('listings/price-suggestion')
+  @ApiOperation({ summary: 'Get AI-suggested price range for a listing (before creation)' })
+  suggestPrice(
+    @Query('categoryId') categoryId: string,
+    @Query('condition') condition: string,
+  ) {
+    return this.marketplaceService.suggestPrice(categoryId, condition ?? 'GOOD');
   }
 
   @Get('listings/slug/:slug')
@@ -50,10 +65,40 @@ export class MarketplaceController {
     return this.marketplaceService.getListingReviews(id);
   }
 
+  @Get('listings/:id/price-check')
+  @ApiOperation({ summary: 'Check if a listing price is a statistical anomaly for its category' })
+  checkPriceAnomaly(@Param('id') id: string) {
+    return this.marketplaceService.checkPriceAnomaly(id);
+  }
+
+  @Get('listings/:id/fraud-check')
+  @ApiOperation({ summary: 'AI fraud/fake-review detection for a listing (admin use)' })
+  detectReviewFraud(@Param('id') id: string) {
+    return this.marketplaceService.detectReviewFraud(id);
+  }
+
+  @Get('listings/:id/sentiment')
+  @ApiOperation({ summary: 'Sentiment analysis of all reviews for a listing' })
+  getReviewSentiment(@Param('id') id: string) {
+    return this.marketplaceService.analyzeListingReviewSentiment(id);
+  }
+
+  @Get('listings/:id/similar')
+  @ApiOperation({ summary: 'Get AI-powered similar listings' })
+  getSimilarListings(@Param('id') id: string, @Query('limit') limit?: number) {
+    return this.marketplaceService.getSimilarListings(id, limit ?? 5);
+  }
+
+  @Get('listings/:id/eta')
+  @ApiOperation({ summary: 'Predict delivery ETA for a listing (minutes, hours, days)' })
+  predictListingEta(@Param('id') id: string, @Query('buyerCity') buyerCity?: string) {
+    return this.marketplaceService.predictListingEta(id, buyerCity);
+  }
+
   // ==================== Authenticated Endpoints ====================
 
   @Post('listings')
-  @UseGuards(ClerkAuthGuard)
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create a new listing' })
   createListing(@CurrentUser('clerkId') clerkId: string, @Body() dto: CreateListingDto) {
@@ -61,7 +106,7 @@ export class MarketplaceController {
   }
 
   @Put('listings/:id')
-  @UseGuards(ClerkAuthGuard)
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update a listing' })
   updateListing(
@@ -73,7 +118,7 @@ export class MarketplaceController {
   }
 
   @Delete('listings/:id')
-  @UseGuards(ClerkAuthGuard)
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @HttpCode(200)
   @ApiOperation({ summary: 'Delete a listing' })
@@ -82,7 +127,7 @@ export class MarketplaceController {
   }
 
   @Get('my-listings')
-  @UseGuards(ClerkAuthGuard)
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get current user listings' })
   getMyListings(@CurrentUser('clerkId') clerkId: string, @Query('status') status?: string) {
@@ -90,7 +135,7 @@ export class MarketplaceController {
   }
 
   @Post('listings/:id/favorite')
-  @UseGuards(ClerkAuthGuard)
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @HttpCode(200)
   @ApiOperation({ summary: 'Toggle favorite on a listing' })
@@ -99,7 +144,7 @@ export class MarketplaceController {
   }
 
   @Get('favorites')
-  @UseGuards(ClerkAuthGuard)
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get current user favorite listings' })
   getMyFavorites(@CurrentUser('clerkId') clerkId: string) {
@@ -107,7 +152,7 @@ export class MarketplaceController {
   }
 
   @Post('listings/:id/reviews')
-  @UseGuards(ClerkAuthGuard)
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Review a listing' })
   createReview(
@@ -119,7 +164,7 @@ export class MarketplaceController {
   }
 
   @Post('listings/:id/boost')
-  @UseGuards(ClerkAuthGuard)
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Boost a listing with Tks tokens (10 Tks for 7 days)' })
   boostListing(@CurrentUser('clerkId') clerkId: string, @Param('id') id: string) {

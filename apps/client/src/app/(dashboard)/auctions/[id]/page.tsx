@@ -20,6 +20,7 @@ import {
   XCircle,
 } from 'lucide-react';
 import { useT } from '@/lib/i18n';
+import { getMediaUrl } from '@/lib/media-url';
 
 function useCountdown(endTime: string) {
   const [remaining, setRemaining] = useState(() => {
@@ -148,7 +149,7 @@ export default function AuctionDetailPage() {
             <div className="relative aspect-[16/9] bg-muted">
               {listing?.images?.length > 0 ? (
                 <img
-                  src={listing.images[0]}
+                  src={getMediaUrl(listing.images[0]) || listing.images[0]}
                   alt={listing.title}
                   className="h-full w-full object-contain"
                 />
@@ -159,7 +160,7 @@ export default function AuctionDetailPage() {
               )}
               <Badge
                 className={`absolute left-3 top-3 ${
-                  isActive ? 'bg-green-500' : isEnded ? 'bg-muted0' : isCanceled ? 'bg-destructive/100' : 'bg-blue-500/100'
+                  isActive ? 'bg-green-500 text-white' : isEnded ? 'bg-muted text-muted-foreground' : isCanceled ? 'bg-destructive text-destructive-foreground' : 'bg-blue-500 text-white'
                 }`}
               >
                 {isActive ? '🟢 En cours' : isEnded ? '🏁 Terminée' : isCanceled ? '❌ Annulée' : '📅 Programmée'}

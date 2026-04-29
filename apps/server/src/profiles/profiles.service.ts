@@ -52,33 +52,27 @@ export class ProfilesService {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new NotFoundException('User not found');
 
-    const { workHistory, interests, accountType, ...profileData } = dto;
+    const { workHistory, interests, accountType, avatarUrl, ...profileData } = dto;
 
-    // Upsert personal profile
+    // Only include defined fields (partial update)
+    const updateData: any = {};
+    Object.entries(profileData).forEach(([k, v]) => { if (v !== undefined) updateData[k] = v; });
+    if (workHistory !== undefined) updateData.workHistory = JSON.parse(JSON.stringify(workHistory));
+    if (interests !== undefined) updateData.interests = interests;
+
     const profile = await this.prisma.personalProfile.upsert({
       where: { userId: user.id },
-      update: {
-        ...profileData,
-        workHistory: workHistory ? JSON.parse(JSON.stringify(workHistory)) : undefined,
-        interests: interests || [],
-      },
-      create: {
-        userId: user.id,
-        ...profileData,
-        workHistory: workHistory ? JSON.parse(JSON.stringify(workHistory)) : [],
-        interests: interests || [],
-      },
+      update: updateData,
+      create: { userId: user.id, ...updateData },
     });
 
-    // Update user's account type
-    await this.prisma.user.update({
-      where: { id: user.id },
-      data: {
-        firstName: dto.firstName,
-        lastName: dto.lastName,
-        accountType: 'personal',
-      },
-    });
+    // Update user table only for provided fields
+    const userUpdate: any = { accountType: 'personal' };
+    if (dto.firstName) userUpdate.firstName = dto.firstName;
+    if (dto.lastName) userUpdate.lastName = dto.lastName;
+    if (avatarUrl) userUpdate.avatarUrl = avatarUrl;
+
+    await this.prisma.user.update({ where: { id: user.id }, data: userUpdate });
 
     this.logger.log(`Personal profile updated for user ${user.id}`);
     return profile;
@@ -91,26 +85,22 @@ export class ProfilesService {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new NotFoundException('User not found');
 
-    const { interests, accountType, ...profileData } = dto;
+    const { interests, accountType, avatarUrl, ...profileData } = dto;
+
+    const updateData: any = {};
+    Object.entries(profileData).forEach(([k, v]) => { if (v !== undefined) updateData[k] = v; });
+    if (interests !== undefined) updateData.interests = interests;
 
     const profile = await this.prisma.businessProfile.upsert({
       where: { userId: user.id },
-      update: {
-        ...profileData,
-        interests: interests || [],
-      },
-      create: {
-        userId: user.id,
-        ...profileData,
-        interests: interests || [],
-      },
+      update: updateData,
+      create: { userId: user.id, ...updateData },
     });
 
-    // Update user's account type
-    await this.prisma.user.update({
-      where: { id: user.id },
-      data: { accountType: 'business' },
-    });
+    const userUpdate: any = { accountType: 'business' };
+    if (avatarUrl) userUpdate.avatarUrl = avatarUrl;
+
+    await this.prisma.user.update({ where: { id: user.id }, data: userUpdate });
 
     this.logger.log(`Business profile updated for user ${user.id}`);
     return profile;

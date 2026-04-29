@@ -4,6 +4,11 @@ import {
   getListings,
   getListingBySlug,
   getMyListings,
+  getSimilarListings,
+  suggestPrice,
+  classifyListing,
+  getListingEta,
+  getListingReviewSentiment,
   createListing,
   updateListing,
   deleteListing,
@@ -153,17 +158,90 @@ export function useBoostListing(options?: { invalidateKeys?: string[][] }) {
   });
 }
 
-/** Toggle favourite on a listing. */
+/** Toggle favourite on a listing — optimistic update flips the heart immediately. */
 export function useToggleFavorite(slug: string) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   return useMutation({
     mutationFn: (listingId: string) => toggleFavorite(listingId),
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: ['listing', slug] });
+      const previous = queryClient.getQueryData<any>(['listing', slug]);
+      if (previous) {
+        queryClient.setQueryData(['listing', slug], (old: any) => ({
+          ...old,
+          isFavorited: !old?.isFavorited,
+          _count: {
+            ...old?._count,
+            favorites: (old?._count?.favorites ?? 0) + (old?.isFavorited ? -1 : 1),
+          },
+        }));
+      }
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(['listing', slug], context.previous);
+      }
+      toast({ title: 'Erreur', description: 'Impossible de mettre à jour les favoris', variant: 'destructive' });
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['listing', slug] });
       toast({ title: 'Favoris mis à jour' });
     },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['listing', slug] });
+    },
+  });
+}
+
+/** Fetch AI-powered similar listings for a given listing ID. */
+export function useSimilarListings(listingId: string | undefined) {
+  return useQuery({
+    queryKey: ['similar-listings', listingId],
+    queryFn: () => getSimilarListings(listingId!),
+    enabled: !!listingId,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+/** AI — Price suggestion for a category + condition pair. */
+export function usePriceSuggestion(categoryId: string | undefined, condition: string | undefined) {
+  return useQuery({
+    queryKey: ['price-suggestion', categoryId, condition],
+    queryFn: () => suggestPrice(categoryId!, condition!),
+    enabled: !!categoryId && !!condition,
+    staleTime: 10 * 60 * 1000,
+  });
+}
+
+/** AI — Auto-classify a listing title + description into category + tags. */
+export function useClassifyListing(title: string, description: string) {
+  return useQuery({
+    queryKey: ['classify-listing', title, description],
+    queryFn: () => classifyListing(title, description),
+    enabled: title.length >= 10 && description.length >= 20,
+    staleTime: 60 * 1000,
+  });
+}
+
+/** AI — ETA prediction for a specific listing. */
+export function useListingEta(listingId: string | undefined) {
+  return useQuery({
+    queryKey: ['listing-eta', listingId],
+    queryFn: () => getListingEta(listingId!),
+    enabled: !!listingId,
+    staleTime: 30 * 60 * 1000,
+  });
+}
+
+/** AI — Review sentiment summary for a specific listing. */
+export function useListingReviewSentiment(listingId: string | undefined) {
+  return useQuery({
+    queryKey: ['listing-sentiment', listingId],
+    queryFn: () => getListingReviewSentiment(listingId!),
+    enabled: !!listingId,
+    staleTime: 15 * 60 * 1000,
   });
 }
 

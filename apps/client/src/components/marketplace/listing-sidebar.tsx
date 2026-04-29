@@ -163,7 +163,7 @@ export function ListingSidebar({
             </p>
             <Link
               href={`/auctions/${listing.auction.id}`}
-              className="mt-3 block w-full rounded-lg bg-destructive/100 py-2 text-center text-sm font-medium text-white hover:bg-red-600"
+              className="mt-3 block w-full rounded-lg bg-destructive py-2 text-center text-sm font-medium text-white hover:bg-red-600"
             >
               Voir l'enchère
             </Link>

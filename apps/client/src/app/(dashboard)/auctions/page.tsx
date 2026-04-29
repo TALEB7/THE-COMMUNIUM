@@ -8,6 +8,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Gavel, Clock, TrendingUp, Plus, Users, Eye } from 'lucide-react';
 import { useT } from '@/lib/i18n';
+import { getMediaUrl } from '@/lib/media-url';
 
 function formatCountdown(endTime: string) {
   const diff = new Date(endTime).getTime() - Date.now();
@@ -183,7 +184,7 @@ function AuctionCard({ auction, tab }: { auction: any; tab: string }) {
         <div className="relative aspect-[4/3] bg-muted">
           {hasImage ? (
             <img
-              src={listing.images[0]}
+              src={getMediaUrl(listing.images[0]) || listing.images[0]}
               alt={listing?.title}
               className="h-full w-full object-cover"
             />
@@ -197,12 +198,12 @@ function AuctionCard({ auction, tab }: { auction: any; tab: string }) {
           <Badge
             className={`absolute left-2 top-2 ${
               isActive
-                ? 'bg-green-500'
+                ? 'bg-green-500 text-white'
                 : isEnded
-                ? 'bg-muted0'
+                ? 'bg-muted text-muted-foreground'
                 : auction.status === 'SCHEDULED'
-                ? 'bg-blue-500/100/100'
-                : 'bg-destructive/100'
+                ? 'bg-blue-500 text-white'
+                : 'bg-destructive text-destructive-foreground'
             }`}
           >
             {isActive ? '🟢 En cours' : isEnded ? '🏁 Terminée' : auction.status}

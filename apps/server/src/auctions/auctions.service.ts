@@ -111,48 +111,30 @@ export class AuctionsService {
     }
 
     // Place the bid in a transaction
-    const [bid] = await this.prisma.$transaction([
-      this.prisma.bid.create({
-        data: {
-          auctionId,
-          bidderId: user.id,
-          amount: dto.amount,
-          isWinning: true,
-        },
-        include: {
-          bidder: {
-            select: { id: true, firstName: true, lastName: true },
-          },
-        },
-      }),
-      // Mark previous winning bid as not winning
-      this.prisma.bid.updateMany({
-        where: {
-          auctionId,
-          isWinning: true,
-          bidderId: { not: user.id },
-        },
-        data: { isWinning: false },
-      }),
-      // Update also the current bid from the same user if they previously had a winning bid
-      this.prisma.bid.updateMany({
-        where: {
-          auctionId,
-          bidderId: user.id,
-          isWinning: true,
-          amount: { not: dto.amount },
-        },
-        data: { isWinning: false },
-      }),
-      // Update auction current price
-      this.prisma.auction.update({
-        where: { id: auctionId },
-        data: {
-          currentPrice: dto.amount,
-          totalBids: { increment: 1 },
-        },
-      }),
-    ]);
+    let bid: any;
+    try {
+      [bid] = await this.prisma.$transaction([
+        this.prisma.bid.create({
+          data: { auctionId, bidderId: user.id, amount: dto.amount, isWinning: true },
+          include: { bidder: { select: { id: true } } },
+        }),
+        this.prisma.bid.updateMany({
+          where: { auctionId, isWinning: true, bidderId: { not: user.id } },
+          data: { isWinning: false },
+        }),
+        this.prisma.bid.updateMany({
+          where: { auctionId, bidderId: user.id, isWinning: true, amount: { not: dto.amount } },
+          data: { isWinning: false },
+        }),
+        this.prisma.auction.update({
+          where: { id: auctionId },
+          data: { currentPrice: dto.amount, totalBids: { increment: 1 } },
+        }),
+      ]);
+    } catch (err) {
+      this.logger.error(`Bid transaction failed for auction ${auctionId}`, err);
+      throw new BadRequestException('La mise n\'a pas pu être enregistrée. Veuillez réessayer.');
+    }
 
     this.logger.log(`Bid placed: ${dto.amount} MAD on auction ${auctionId} by user ${user.id}`);
     return bid;
@@ -160,7 +142,7 @@ export class AuctionsService {
 
   // ==================== Get Auction ====================
 
-  async getAuction(auctionId: string) {
+  async getAuction(auctionId: string, requestingUserId?: string) {
     const auction = await this.prisma.auction.findUnique({
       where: { id: auctionId },
       include: {
@@ -168,21 +150,13 @@ export class AuctionsService {
           include: {
             category: true,
             seller: {
-              select: {
-                id: true,
-                firstName: true,
-                lastName: true,
-                avatarUrl: true,
-                isVerified: true,
-              },
+              select: { id: true, firstName: true, lastName: true, avatarUrl: true, isVerified: true },
             },
           },
         },
         bids: {
           include: {
-            bidder: {
-              select: { id: true, firstName: true, lastName: true, avatarUrl: true },
-            },
+            bidder: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
           },
           orderBy: { amount: 'desc' },
           take: 20,
@@ -190,6 +164,25 @@ export class AuctionsService {
       },
     });
     if (!auction) throw new NotFoundException('Auction not found');
+
+    // Anonymize bidder identities — only the seller or the bidder themselves can see real names.
+    // Once the auction has ended, all names are revealed.
+    const isEnded   = auction.status === 'ENDED' || auction.status === 'CANCELLED';
+    const sellerId  = (auction.listing as any)?.seller?.id;
+    const isSeller  = requestingUserId && requestingUserId === sellerId;
+
+    if (!isEnded && !isSeller) {
+      (auction as any).bids = auction.bids.map((bid: any) => {
+        const isSelf = requestingUserId && bid.bidder?.id === requestingUserId;
+        return {
+          ...bid,
+          bidder: isSelf
+            ? bid.bidder
+            : { id: bid.bidder?.id, firstName: 'Enchérisseur', lastName: 'Anonyme', avatarUrl: null },
+        };
+      });
+    }
+
     return auction;
   }
 

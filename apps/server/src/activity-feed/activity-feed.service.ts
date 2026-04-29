@@ -120,13 +120,28 @@ export class ActivityFeedService {
   // ── Feed stats ──
 
   async getFeedStats(userId: string) {
-    const [totalPosts, totalEvents, totalConnections] = await Promise.all([
-      this.prisma.activityFeedItem.count({ where: { userId, type: 'POST' } }),
-      this.prisma.activityFeedItem.count({ where: { userId, type: 'EVENT' } }),
+    const [byType, totalConnections] = await Promise.all([
+      this.prisma.activityFeedItem.groupBy({
+        by: ['type'],
+        where: { userId },
+        _count: { _all: true },
+      }),
       this.prisma.connection.count({
         where: { status: 'ACCEPTED', OR: [{ fromId: userId }, { toId: userId }] },
       }),
     ]);
-    return { totalPosts, totalEvents, totalConnections };
+
+    const breakdown: Record<string, number> = {};
+    let total = 0;
+    for (const row of byType) {
+      breakdown[row.type] = row._count._all;
+      total += row._count._all;
+    }
+
+    return {
+      total,
+      breakdown,
+      totalConnections,
+    };
   }
 }

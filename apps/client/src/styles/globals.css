@@ -4,68 +4,72 @@
 
 @layer base {
   :root {
-    --background: 44 33% 98%; /* Premium Cream #fcfaf2 */
-    --foreground: 220 40% 10%; /* Deep Navy/Black */
+    --background: 0 0% 99%;
+    --foreground: 220 40% 10%;
     --card: 0 0% 100%;
     --card-foreground: 220 40% 10%;
     --popover: 0 0% 100%;
     --popover-foreground: 220 40% 10%;
-    --primary: 44 85% 45%; /* Communium Gold #d4af37 */
-    --primary-foreground: 44 33% 98%;
-    --secondary: 44 20% 94%;
-    --secondary-foreground: 44 85% 25%;
-    --muted: 44 20% 94%;
+    --primary: 350 85% 42%;        /* #C8102E — Communium Red */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 354 10% 95%;
+    --secondary-foreground: 350 85% 25%;
+    --muted: 354 10% 95%;
     --muted-foreground: 220 10% 45%;
-    --accent: 44 40% 90%;
-    --accent-foreground: 44 85% 25%;
+    --accent: 354 15% 92%;
+    --accent-foreground: 350 85% 25%;
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 44 20% 88%;
-    --input: 44 20% 88%;
-    --ring: 44 85% 45%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 354 10% 88%;
+    --input: 354 10% 88%;
+    --ring: 350 85% 42%;
     --radius: 1rem;
 
     /* Brand tokens — light */
-    --gold: 44 85% 45%;
-    --gold-glow: hsla(44, 85%, 45%, 0.15);
+    --gold: 350 85% 42%;
+    --gold-glow: hsla(350, 85%, 42%, 0.15);
 
     /* Surface tokens — light */
-    --surface-gradient: linear-gradient(135deg, hsl(0 0% 100%) 0%, hsl(44 20% 97%) 100%);
-    --brushed-metal: linear-gradient(135deg, hsl(44 20% 94%) 0%, hsl(44 20% 90%) 50%, hsl(44 20% 94%) 100%);
-    --glow-border: rgba(212, 175, 55, 0.2);
-    --glow-border-hover: rgba(212, 175, 55, 0.4);
+    --surface-gradient: linear-gradient(135deg, hsl(0 0% 100%) 0%, hsl(354 10% 97%) 100%);
+    --brushed-metal: linear-gradient(135deg, hsl(354 10% 94%) 0%, hsl(354 10% 90%) 50%, hsl(354 10% 94%) 100%);
+    --glow-border: rgba(200, 16, 46, 0.2);
+    --glow-border-hover: rgba(200, 16, 46, 0.4);
   }
 
   .dark {
-    --background: 0 0% 0%; /* Absolute Black #000000 */
-    --foreground: 0 0% 92%; /* Soft White */
-    --card: 0 0% 7%; /* Deep Charcoal #121212 */
-    --card-foreground: 0 0% 90%;
-    --popover: 0 0% 7%;
-    --popover-foreground: 0 0% 90%;
-    --primary: 44 85% 55%; /* Bright Gold #e6b800 */
-    --primary-foreground: 0 0% 2%;
-    --secondary: 0 0% 10%; /* #1a1a1a */
-    --secondary-foreground: 0 0% 92%;
-    --muted: 0 0% 10%; /* #1a1a1a */
-    --muted-foreground: 0 0% 55%; /* Muted Gray */
-    --accent: 0 0% 16%; /* Slate #2A2A2A */
-    --accent-foreground: 0 0% 92%;
-    --destructive: 0 62.8% 30.6%;
+    --background: 224 14% 6%;
+    --foreground: 220 15% 91%;
+    --card: 224 14% 9%;
+    --card-foreground: 220 15% 91%;
+    --popover: 224 14% 9%;
+    --popover-foreground: 220 15% 91%;
+    --primary: 350 85% 52%;        /* brighter red for dark bg */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 224 14% 12%;
+    --secondary-foreground: 220 15% 91%;
+    --muted: 224 14% 12%;
+    --muted-foreground: 220 10% 50%;
+    --accent: 224 14% 15%;
+    --accent-foreground: 220 15% 91%;
+    --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 12%; /* Subtle dark border */
-    --input: 0 0% 12%;
-    --ring: 44 85% 55%;
+    --border: 224 14% 14%;
+    --input: 224 14% 14%;
+    --ring: 350 85% 52%;
 
     /* Brand tokens — dark */
-    --gold: 44 85% 55%;
-    --gold-glow: hsla(44, 85%, 55%, 0.25);
+    --gold: 350 85% 52%;
+    --gold-glow: hsla(350, 85%, 52%, 0.2);
 
-    /* Ultra-dark surface tokens */
-    --surface-gradient: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
-    --brushed-metal: linear-gradient(135deg, #2a2a2a 0%, #3a3a3a 50%, #2a2a2a 100%);
-    --glow-border: rgba(160, 160, 160, 0.25);
-    --glow-border-hover: rgba(200, 200, 200, 0.4);
+    /* Aurora tokens (keep purple for atmosphere) */
+    --aurora-primary: hsla(280, 80%, 55%, 0.18);
+    --aurora-secondary: hsla(300, 90%, 50%, 0.12);
+    --aurora-tertiary: hsla(260, 70%, 45%, 0.10);
+
+    --surface-gradient: linear-gradient(135deg, hsl(224 14% 9%) 0%, hsl(224 14% 12%) 100%);
+    --brushed-metal: linear-gradient(135deg, hsl(224 14% 12%) 0%, hsl(224 14% 16%) 50%, hsl(224 14% 12%) 100%);
+    --glow-border: rgba(200, 16, 46, 0.25);
+    --glow-border-hover: rgba(232, 35, 62, 0.45);
   }
 
   * {
@@ -87,7 +91,7 @@
     border-color: hsl(var(--border));
   }
   .dark .form-input:focus {
-    box-shadow: 0 0 15px rgba(160, 160, 160, 0.1), 0 0 4px rgba(212, 175, 55, 0.15);
+    box-shadow: 0 0 15px rgba(200, 16, 46, 0.1), 0 0 4px rgba(200, 16, 46, 0.2);
     border-color: hsl(var(--primary));
   }
 
@@ -108,7 +112,7 @@
   }
   .dark .premium-card:hover {
     border-color: var(--glow-border-hover);
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6), 0 0 20px rgba(160, 160, 160, 0.08);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6), 0 0 20px rgba(200, 16, 46, 0.12);
   }
 
   .ygo-card {
@@ -131,19 +135,19 @@
     @apply opacity-100;
   }
 
-  /* ── Gold CTA Button ── */
+  /* ── Red CTA Button ── */
   .ygo-btn-gold {
     @apply relative inline-flex items-center justify-center px-8 py-3 font-bold text-sm transition-all duration-300 rounded-xl overflow-hidden active:scale-95;
-    background: linear-gradient(135deg, #d4af37 0%, #f1c40f 50%, #b8860b 100%);
-    color: #000;
-    box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
+    background: linear-gradient(135deg, #C8102E 0%, #E8233E 50%, #A60D25 100%);
+    color: #fff;
+    box-shadow: 0 4px 15px rgba(200, 16, 46, 0.35);
   }
   .ygo-btn-gold:hover {
-    @apply shadow-[0_0_20px_rgba(212,175,55,0.5)];
-    background: linear-gradient(135deg, #f1c40f 0%, #d4af37 50%, #c9a730 100%);
+    box-shadow: 0 0 24px rgba(200, 16, 46, 0.55);
+    background: linear-gradient(135deg, #E8233E 0%, #C8102E 50%, #A60D25 100%);
   }
 
-  /* ── Brushed Metal Button (ultra-dark) ── */
+  /* ── Brushed Metal Button ── */
   .brushed-metal-btn {
     @apply relative inline-flex items-center justify-center px-8 py-3 font-bold text-sm transition-all duration-300 rounded-xl overflow-hidden active:scale-95;
     background: var(--brushed-metal);
@@ -153,29 +157,26 @@
   }
   .brushed-metal-btn:hover {
     border-color: var(--glow-border-hover);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), 0 0 8px rgba(160, 160, 160, 0.1);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), 0 0 8px rgba(200, 16, 46, 0.1);
     background: linear-gradient(135deg, #3a3a3a 0%, #4a4a4a 50%, #3a3a3a 100%);
   }
 
   .ygo-btn-blue {
     @apply relative inline-flex items-center justify-center px-8 py-3 font-bold text-sm transition-all duration-300 rounded-xl overflow-hidden active:scale-95;
-    @apply bg-foreground text-background hover:opacity-90;
+    background: linear-gradient(135deg, #C8102E 0%, #E8233E 50%, #A60D25 100%);
+    color: #fff;
+    box-shadow: 0 4px 15px rgba(200, 16, 46, 0.35);
   }
-  .dark .ygo-btn-blue {
-    background: var(--brushed-metal);
-    color: #e0e0e0;
-    border: 1px solid var(--glow-border);
-  }
-  .dark .ygo-btn-blue:hover {
-    border-color: var(--glow-border-hover);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5), 0 0 6px rgba(160, 160, 160, 0.1);
+  .ygo-btn-blue:hover {
+    box-shadow: 0 0 24px rgba(200, 16, 46, 0.55);
+    background: linear-gradient(135deg, #E8233E 0%, #C8102E 50%, #A60D25 100%);
   }
 
   .gold-pill {
     @apply bg-primary text-primary-foreground px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider shadow-lg;
   }
 
-  /* ── Premium Background Design (Ultra-Dark Aurora Mesh) ── */
+  /* ── Background Design ── */
   .noise-overlay {
     position: fixed;
     inset: 0;
@@ -212,13 +213,13 @@
   .aurora-1 {
     top: -10%;
     left: -10%;
-    background: radial-gradient(circle, hsla(var(--primary), 0.3) 0%, transparent 70%);
+    background: radial-gradient(circle, hsla(350, 85%, 42%, 0.25) 0%, transparent 70%);
   }
 
   .aurora-2 {
     bottom: -10%;
     right: -10%;
-    background: radial-gradient(circle, hsla(44, 85%, 45%, 0.2) 0%, transparent 70%);
+    background: radial-gradient(circle, hsla(350, 85%, 42%, 0.18) 0%, transparent 70%);
     animation-delay: -5s;
     animation-duration: 25s;
   }
@@ -228,20 +229,20 @@
     left: 30%;
     width: 50vw;
     height: 50vh;
-    background: radial-gradient(circle, hsla(0, 0%, 40%, 0.15) 0%, transparent 70%);
+    background: radial-gradient(circle, hsla(0, 0%, 40%, 0.12) 0%, transparent 70%);
     animation-delay: -10s;
     animation-duration: 30s;
   }
 
-  /* Dark mode aurora — neutral gray tones instead of gold */
+  /* Dark mode aurora — purple atmosphere */
   .dark .aurora-1 {
-    background: radial-gradient(circle, hsla(0, 0%, 25%, 0.25) 0%, transparent 70%);
+    background: radial-gradient(circle, hsla(280, 80%, 55%, 0.22) 0%, transparent 70%);
   }
   .dark .aurora-2 {
-    background: radial-gradient(circle, hsla(0, 0%, 20%, 0.2) 0%, transparent 70%);
+    background: radial-gradient(circle, hsla(300, 90%, 50%, 0.15) 0%, transparent 70%);
   }
   .dark .aurora-3 {
-    background: radial-gradient(circle, hsla(0, 0%, 30%, 0.12) 0%, transparent 70%);
+    background: radial-gradient(circle, hsla(260, 70%, 45%, 0.12) 0%, transparent 70%);
   }
 
   @keyframes aurora-float {
@@ -250,11 +251,11 @@
   }
 
   .dark .aurora {
-    opacity: 0.10;
+    opacity: 0.18;
     mix-blend-mode: plus-lighter;
   }
 
-  /* ── Profile Avatar — Glowing Gray Border ── */
+  /* ── Avatar ── */
   .avatar-glow {
     @apply relative flex shrink-0 items-center justify-center overflow-hidden rounded-full;
     border: 2px solid hsl(var(--primary));
@@ -263,10 +264,10 @@
   .dark .avatar-glow {
     border: 2px solid transparent;
     background-clip: padding-box;
-    box-shadow: 0 0 0 2px #555, 0 0 10px rgba(160, 160, 160, 0.2);
+    box-shadow: 0 0 0 2px rgba(200,16,46,0.4), 0 0 10px rgba(200,16,46,0.15);
   }
   .dark .avatar-glow:hover {
-    box-shadow: 0 0 0 2px #777, 0 0 14px rgba(200, 200, 200, 0.3);
+    box-shadow: 0 0 0 2px rgba(200,16,46,0.6), 0 0 14px rgba(200,16,46,0.25);
   }
 
   .ygo-tokens {
@@ -293,7 +294,7 @@
 
   .ygo-accent-line {
     height: 2px;
-    background: linear-gradient(90deg, transparent, hsl(var(--gold)), transparent);
+    background: linear-gradient(90deg, transparent, hsl(var(--primary)), transparent);
   }
 
   .ygo-section-title {
@@ -307,7 +308,7 @@
     top: 2px;
     bottom: 2px;
     width: 4px;
-    background: linear-gradient(180deg, hsl(var(--gold)), hsl(var(--gold)));
+    background: linear-gradient(180deg, hsl(var(--primary)), hsl(var(--primary)));
   }
 
   .rarity-normal {
@@ -322,10 +323,10 @@
     box-shadow: 0 0 8px rgba(99, 102, 241, 0.15);
   }
   .rarity-ultra {
-    background: linear-gradient(135deg, hsla(var(--gold), 0.15), hsla(var(--gold), 0.08));
-    color: hsl(var(--gold));
-    border: 1px solid hsla(var(--gold), 0.5);
-    box-shadow: 0 0 10px hsla(var(--gold), 0.2);
+    background: linear-gradient(135deg, hsla(350, 85%, 42%, 0.15), hsla(350, 85%, 42%, 0.08));
+    color: hsl(var(--primary));
+    border: 1px solid hsla(350, 85%, 42%, 0.5);
+    box-shadow: 0 0 10px hsla(350, 85%, 42%, 0.2);
   }
 
   .ygo-nav-active {
@@ -338,7 +339,7 @@
     left: 0;
     right: 0;
     height: 3px;
-    background: linear-gradient(90deg, hsl(var(--gold)), hsl(var(--gold)), hsl(var(--gold)));
+    background: hsl(var(--primary));
   }
 
   .ygo-banner {

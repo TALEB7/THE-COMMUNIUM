@@ -122,6 +122,101 @@ export async function toggleFavorite(listingId: string): Promise<void> {
   await api.post(`/marketplace/listings/${listingId}/favorite`);
 }
 
+// ==================== AI — Similar Listings ====================
+
+export async function getSimilarListings(listingId: string): Promise<Listing[]> {
+  const { data } = await api.get<Listing[]>(
+    `/marketplace/listings/${listingId}/similar`,
+    { params: { limit: 5 } },
+  );
+  return data;
+}
+
+// ==================== AI — Price Suggestion ====================
+
+export interface PriceSuggestion {
+  min_price: number;
+  max_price: number;
+  recommended_price: number;
+  confidence: number;
+  method: string;
+}
+
+export async function suggestPrice(
+  categoryId: string,
+  condition: string,
+): Promise<PriceSuggestion> {
+  const { data } = await api.get<PriceSuggestion>(
+    '/marketplace/listings/price-suggestion',
+    { params: { categoryId, condition } },
+  );
+  return data;
+}
+
+// ==================== AI — NLP Auto-classify ====================
+
+export interface ClassifyResult {
+  predicted_category: string;
+  confidence: number;
+  suggested_tags: string[];
+  urgency: string;
+}
+
+export async function classifyListing(
+  title: string,
+  description: string,
+): Promise<ClassifyResult> {
+  const { data } = await api.get<ClassifyResult>(
+    '/marketplace/listings/classify',
+    { params: { title, description } },
+  );
+  return data;
+}
+
+// ==================== AI — ETA Prediction ====================
+
+export interface EtaResult {
+  eta_minutes: number;
+  eta_hours: number;
+  eta_days: number;
+  confidence: number;
+  breakdown: {
+    base_hours: number;
+    category: string;
+    location_zone: string;
+    condition_factor: string;
+    seller_experience: string;
+    timing: string;
+  };
+}
+
+export async function getListingEta(
+  listingId: string,
+  buyerCity?: string,
+): Promise<EtaResult> {
+  const { data } = await api.get<EtaResult>(
+    `/marketplace/listings/${listingId}/eta`,
+    { params: buyerCity ? { buyerCity } : {} },
+  );
+  return data;
+}
+
+// ==================== AI — Sentiment Analysis ====================
+
+export interface SentimentResult {
+  results: Array<{ text: string; label: string; score: number; compound: number }>;
+  avg_compound: number;
+}
+
+export async function getListingReviewSentiment(
+  listingId: string,
+): Promise<SentimentResult> {
+  const { data } = await api.get<SentimentResult>(
+    `/marketplace/listings/${listingId}/sentiment`,
+  );
+  return data;
+}
+
 // ==================== Reviews ====================
 
 export async function getListingReviews(

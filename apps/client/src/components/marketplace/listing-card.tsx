@@ -5,6 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Heart, Eye, MapPin } from 'lucide-react';
 import { LISTING_CONDITIONS } from '@communium/shared';
+import { getMediaUrl } from '@/lib/media-url';
 
 interface ListingCardProps {
   listing: {
@@ -38,7 +39,7 @@ export function ListingCard({ listing }: ListingCardProps) {
         <div className="relative aspect-[4/3] bg-muted">
           {hasImage ? (
             <img
-              src={listing.images[0]}
+              src={getMediaUrl(listing.images[0]) || listing.images[0]}
               alt={listing.title}
               className="h-full w-full object-cover"
             />
@@ -51,7 +52,7 @@ export function ListingCard({ listing }: ListingCardProps) {
             <Badge className="absolute left-2 top-2 bg-amber-500">⚡ Boosté</Badge>
           )}
           {listing.auction && (
-            <Badge className="absolute right-2 top-2 bg-destructive/100">🔨 Enchère</Badge>
+            <Badge className="absolute right-2 top-2 bg-destructive">🔨 Enchère</Badge>
           )}
         </div>
 

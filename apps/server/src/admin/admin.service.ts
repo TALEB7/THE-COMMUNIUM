@@ -1,5 +1,8 @@
-import { Injectable, ForbiddenException } from '@nestjs/common';
+import { Injectable, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+
+const ALLOWED_ROLES   = ['USER', 'ADMIN', 'MODERATOR'] as const;
+const ALLOWED_STATUSES = ['ACTIVE', 'BANNED', 'SUSPENDED'] as const;
 
 @Injectable()
 export class AdminService {
@@ -105,6 +108,9 @@ export class AdminService {
 
   async updateUserStatus(adminId: string, targetUserId: string, status: string) {
     await this.assertAdmin(adminId);
+    if (!(ALLOWED_STATUSES as readonly string[]).includes(status)) {
+      throw new BadRequestException(`Statut invalide. Valeurs autorisées : ${ALLOWED_STATUSES.join(', ')}`);
+    }
 
     const user = await this.prisma.user.update({
       where: { id: targetUserId },
@@ -126,6 +132,9 @@ export class AdminService {
 
   async updateUserRole(adminId: string, targetUserId: string, role: string) {
     await this.assertAdmin(adminId);
+    if (!(ALLOWED_ROLES as readonly string[]).includes(role)) {
+      throw new BadRequestException(`Rôle invalide. Valeurs autorisées : ${ALLOWED_ROLES.join(', ')}`);
+    }
 
     const user = await this.prisma.user.update({
       where: { id: targetUserId },

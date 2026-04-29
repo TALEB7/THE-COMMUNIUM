@@ -146,7 +146,7 @@ export default function AlertsPage() {
                     Prix atteint !
                   </Badge>
                 ) : (
-                  <Badge variant="outline" className="border-[#d4c088] text-primary">
+                  <Badge variant="outline" className="border-[#C8102E] text-primary">
                     En attente
                   </Badge>
                 )}

@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, Gavel, AlertTriangle } from 'lucide-react';
 import { useT } from '@/lib/i18n';
+import { getMediaUrl } from '@/lib/media-url';
 
 export default function CreateAuctionPage() {
   const { t } = useT();
@@ -164,11 +165,11 @@ export default function CreateAuctionPage() {
                       value={l.id}
                       checked={listingId === l.id}
                       onChange={() => setListingId(l.id)}
-                      className="accent-[#c9a730]"
+                      className="accent-[#C8102E]"
                     />
                     <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg bg-muted">
                       {l.images?.length > 0 ? (
-                        <img src={l.images[0]} alt="" className="h-full w-full object-cover" />
+                        <img src={getMediaUrl(l.images[0]) || l.images[0]} alt="" className="h-full w-full object-cover" />
                       ) : (
                         <div className="flex h-full items-center justify-center text-lg">📦</div>
                       )}

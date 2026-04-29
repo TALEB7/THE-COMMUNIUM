@@ -24,7 +24,7 @@ const CATEGORY_ICONS: Record<string, any> = {
 
 const CATEGORY_COLORS: Record<string, string> = {
   community: '#3949ab',
-  commerce: '#c9a730',
+  commerce: '#C8102E',
   achievement: '#e65100',
   milestone: '#2e7d32',
   special: '#6a1b9a',
@@ -93,10 +93,10 @@ export default function BadgesPage() {
 
         <div className="space-y-3">
           {(leaderboard as any[]).map((entry: any, idx: number) => (
-            <Card key={entry.userId} className={`border-l-4 ${idx < 3 ? 'border-l-[#c9a730] bg-accent' : 'border-l-[#1a237e]/20'}`}>
+            <Card key={entry.userId} className={`border-l-4 ${idx < 3 ? 'border-l-[#C8102E] bg-accent' : 'border-l-[#1a237e]/20'}`}>
               <CardContent className="p-4 flex items-center gap-4">
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg ${
-                  idx === 0 ? 'bg-[#c9a730] text-white' :
+                  idx === 0 ? 'bg-[#C8102E] text-white' :
                   idx === 1 ? 'bg-gray-400 text-white' :
                   idx === 2 ? 'bg-amber-600 text-white' :
                   'bg-primary/10 text-primary'
@@ -126,7 +126,7 @@ export default function BadgesPage() {
 
   if (view === 'detail' && badgeDetail) {
     const Icon = CATEGORY_ICONS[badgeDetail.category] || Award;
-    const color = CATEGORY_COLORS[badgeDetail.category] || '#c9a730';
+    const color = CATEGORY_COLORS[badgeDetail.category] || '#C8102E';
     return (
       <div className="space-y-6">
         <div className="flex items-center gap-3">
@@ -147,7 +147,7 @@ export default function BadgesPage() {
               <Badge variant="outline" className="text-sm" style={{ borderColor: color, color }}>
                 {badgeDetail.category}
               </Badge>
-              <Badge className="bg-[#c9a730]/20 text-primary">
+              <Badge className="bg-[#C8102E]/20 text-primary">
                 +{badgeDetail.xpReward} XP
               </Badge>
             </div>
@@ -202,7 +202,7 @@ export default function BadgesPage() {
           </button>
           <button
             onClick={() => setView('leaderboard')}
-            className="px-4 py-2 text-sm font-medium bg-[#c9a730] text-white rounded-lg hover:bg-[#c9a730]/90"
+            className="px-4 py-2 text-sm font-medium bg-[#C8102E] text-white rounded-lg hover:bg-[#C8102E]/90"
           >
             <Trophy className="w-4 h-4 inline mr-1" /> {t.badges.leaderboard}
           </button>
@@ -212,7 +212,7 @@ export default function BadgesPage() {
       {/* My badges summary */}
       <Card className="border-primary/30 bg-gradient-to-r from-[#faf6e9] to-white">
         <CardContent className="p-6 flex items-center gap-6">
-          <div className="w-16 h-16 rounded-full bg-[#c9a730]/20 flex items-center justify-center">
+          <div className="w-16 h-16 rounded-full bg-[#C8102E]/20 flex items-center justify-center">
             <Medal className="w-8 h-8 text-primary" />
           </div>
           <div>
@@ -235,7 +235,7 @@ export default function BadgesPage() {
       {/* All badges by category */}
       {Object.entries(grouped).map(([cat, items]) => {
         const CatIcon = CATEGORY_ICONS[cat] || Shield;
-        const catColor = CATEGORY_COLORS[cat] || '#c9a730';
+        const catColor = CATEGORY_COLORS[cat] || '#C8102E';
         return (
           <div key={cat} className="space-y-3">
             <h2 className="flex items-center gap-2 text-lg font-bold capitalize" style={{ color: catColor }}>

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useAuth } from '@/lib/auth-client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { getMediaUrl } from '@/lib/media-url';
 import { api } from '@/lib/api';
 import { useT } from '@/lib/i18n';
 import { Card, CardContent } from '@/components/ui/card';
@@ -100,7 +101,7 @@ export default function AnnouncementsPage() {
             </div>
 
             {detail.imageUrl && (
-              <img src={detail.imageUrl} alt="" className="w-full rounded-lg max-h-80 object-cover" />
+              <img src={getMediaUrl(detail.imageUrl) || detail.imageUrl} alt="" className="w-full rounded-lg max-h-80 object-cover" />
             )}
 
             <div className="prose max-w-none text-foreground/80 whitespace-pre-wrap">
@@ -141,7 +142,7 @@ export default function AnnouncementsPage() {
           </div>
         </div>
         {(unreadCount?.count || 0) > 0 && (
-          <Badge className="bg-destructive/100 text-white px-3 py-1">
+          <Badge className="bg-destructive text-white px-3 py-1">
             {unreadCount.count} {t.announcements.unread}
           </Badge>
         )}
@@ -156,7 +157,7 @@ export default function AnnouncementsPage() {
             <Card
               key={ann.id}
               className={`cursor-pointer hover:shadow-lg transition-all ${
-                ann.isPinned ? 'border-l-4 border-l-[#c9a730] bg-accent/50' : ''
+                ann.isPinned ? 'border-l-4 border-l-[#C8102E] bg-accent/50' : ''
               }`}
               onClick={() => {
                 setSelectedId(ann.id);

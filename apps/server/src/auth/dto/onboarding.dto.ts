@@ -1,8 +1,8 @@
-import { IsEmail, IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsArray, IsEmail, IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class OnboardingDto {
-  @ApiProperty({ description: 'Clerk user ID' })
+  @ApiProperty({ description: 'User ID' })
   @IsString()
   @IsNotEmpty()
   clerkId: string;
@@ -25,6 +25,13 @@ export class OnboardingDto {
   @IsString()
   lastName?: string;
 
+  // Interests / sectors
+  @ApiProperty({ required: false, type: [String] })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  interests?: string[];
+
   // Personal Fields
   @ApiProperty({ required: false })
   @IsOptional()
@@ -34,7 +41,7 @@ export class OnboardingDto {
   @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
-  identityType?: string; // cin | passport
+  identityType?: string;
 
   @ApiProperty({ required: false })
   @IsOptional()

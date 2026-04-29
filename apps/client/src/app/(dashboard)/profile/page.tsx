@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Pencil, MapPin, Mail, Phone, Briefcase, Building2, Calendar } from 'lucide-react';
 import Link from 'next/link';
 import { useT } from '@/lib/i18n';
+import { getMediaUrl } from '@/lib/media-url';
 
 export default function ProfilePage() {
   const { t } = useT();
@@ -35,9 +36,21 @@ export default function ProfilePage() {
         <CardContent className="pt-6">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-4">
-              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-accent text-2xl font-bold text-primary border-2 border-primary">
-                {user?.firstName?.[0] || user?.email?.[0]?.toUpperCase() || 'U'}
-                {user?.lastName?.[0]}
+              <div className="relative h-20 w-20 shrink-0 rounded-full border-2 border-primary overflow-hidden bg-accent flex items-center justify-center">
+                {getMediaUrl(profile?.avatarUrl) ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={getMediaUrl(profile.avatarUrl)!}
+                    alt="Avatar"
+                    className="h-full w-full object-cover"
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                  />
+                ) : (
+                  <span className="text-2xl font-bold text-primary">
+                    {user?.firstName?.[0] || user?.email?.[0]?.toUpperCase() || 'U'}
+                    {user?.lastName?.[0]}
+                  </span>
+                )}
               </div>
               <div>
                 <h1 className="text-2xl font-extrabold text-primary font-heading">

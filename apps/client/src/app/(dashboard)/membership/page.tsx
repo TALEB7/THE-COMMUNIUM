@@ -118,7 +118,7 @@ export default function MembershipPage() {
             key={plan.id}
             className={`cursor-pointer transition ${
               selectedPlan === plan.id
-                ? 'border-primary ring-2 ring-[#c9a730]/30'
+                ? 'border-primary ring-2 ring-[#C8102E]/30'
                 : plan.highlighted
                   ? 'border-primary/50 shadow-md'
                   : ''
@@ -126,7 +126,7 @@ export default function MembershipPage() {
             onClick={() => setSelectedPlan(plan.id)}
           >
             {plan.highlighted && (
-              <div className="rounded-t-lg bg-gradient-to-r from-[#c9a730] to-[#e6c200] px-4 py-1 text-center text-xs font-bold text-primary">
+              <div className="rounded-t-lg bg-gradient-to-r from-[#C8102E] to-[#E8233E] px-4 py-1 text-center text-xs font-bold text-primary">
                 {t.membership.mostPopular}
               </div>
             )}

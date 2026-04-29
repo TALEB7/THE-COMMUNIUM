@@ -30,8 +30,8 @@ export class UploadsService {
    * In prod: would return S3/R2 URL
    */
   getFileUrl(folder: string, filename: string): string {
-    const baseUrl = this.config.get('API_BASE_URL', 'http://localhost:4000');
-    return `${baseUrl}/api/uploads/${folder}/${filename}`;
+    // Return relative path so any client (localhost or LAN) can resolve it
+    return `/api/uploads/${folder}/${filename}`;
   }
 
   /**

@@ -1,6 +1,4 @@
-import { Injectable, Logger, BadRequestException, UnauthorizedException } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { Webhook } from 'svix';
+import { Injectable, BadRequestException, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { OnboardingDto } from './dto/onboarding.dto';
 import { LoginDto } from './dto/login.dto';
@@ -8,26 +6,10 @@ import { RegisterDto } from './dto/register.dto';
 import * as bcrypt from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
 
-interface ClerkWebhookEvent {
-  type: string;
-  data: {
-    id: string;
-    email_addresses: Array<{ email_address: string; id: string }>;
-    first_name: string | null;
-    last_name: string | null;
-    image_url: string | null;
-    created_at: number;
-    updated_at: number;
-  };
-}
-
 @Injectable()
 export class AuthService {
-  private readonly logger = new Logger(AuthService.name);
-
   constructor(
     private readonly prisma: PrismaService,
-    private readonly config: ConfigService,
     private readonly jwtService: JwtService,
   ) { }
 
@@ -57,7 +39,7 @@ export class AuthService {
       },
     });
 
-    const token = this.jwtService.sign({ sub: user.id, email: user.email });
+    const token = this.jwtService.sign({ sub: user.id, email: user.email, role: user.role });
 
     return {
       user: {
@@ -68,6 +50,7 @@ export class AuthService {
         accountType: user.accountType,
         phone: user.phone,
         avatarUrl: user.avatarUrl,
+        role: user.role,
       },
       token,
     };
@@ -91,7 +74,7 @@ export class AuthService {
       throw new UnauthorizedException('Email ou mot de passe incorrect');
     }
 
-    const token = this.jwtService.sign({ sub: user.id, email: user.email });
+    const token = this.jwtService.sign({ sub: user.id, email: user.email, role: user.role });
 
     return {
       user: {
@@ -105,101 +88,6 @@ export class AuthService {
       },
       token,
     };
-  }
-
-  /**
-   * Verify and process Clerk webhook events
-   */
-  async handleClerkWebhook(
-    rawBody: Buffer,
-    headers: Record<string, string>,
-  ) {
-    const webhookSecret = this.config.get<string>('CLERK_WEBHOOK_SECRET');
-    if (!webhookSecret) {
-      throw new BadRequestException('Webhook secret not configured');
-    }
-
-    const wh = new Webhook(webhookSecret);
-    let event: ClerkWebhookEvent;
-
-    try {
-      event = wh.verify(rawBody.toString(), headers) as ClerkWebhookEvent;
-    } catch (err) {
-      this.logger.error('Clerk webhook verification failed', err);
-      throw new BadRequestException('Invalid webhook signature');
-    }
-
-    this.logger.log(`Clerk webhook received: ${event.type}`);
-
-    switch (event.type) {
-      case 'user.created':
-        await this.handleUserCreated(event.data);
-        break;
-      case 'user.updated':
-        await this.handleUserUpdated(event.data);
-        break;
-      case 'user.deleted':
-        await this.handleUserDeleted(event.data.id);
-        break;
-      default:
-        this.logger.log(`Unhandled webhook event: ${event.type}`);
-    }
-
-    return { received: true };
-  }
-
-  /**
-   * Handle user creation from Clerk
-   */
-  private async handleUserCreated(data: ClerkWebhookEvent['data']) {
-    const email = data.email_addresses[0]?.email_address;
-
-    const user = await this.prisma.user.upsert({
-      where: { clerkId: data.id },
-      update: {
-        email,
-        firstName: data.first_name,
-        lastName: data.last_name,
-        avatarUrl: data.image_url,
-      },
-      create: {
-        clerkId: data.id,
-        email,
-        firstName: data.first_name,
-        lastName: data.last_name,
-        avatarUrl: data.image_url,
-      },
-    });
-
-    this.logger.log(`User synced from Clerk: ${user.id} (${email})`);
-    return user;
-  }
-
-  /**
-   * Handle user update from Clerk
-   */
-  private async handleUserUpdated(data: ClerkWebhookEvent['data']) {
-    const email = data.email_addresses[0]?.email_address;
-
-    await this.prisma.user.update({
-      where: { clerkId: data.id },
-      data: {
-        email,
-        firstName: data.first_name,
-        lastName: data.last_name,
-        avatarUrl: data.image_url,
-      },
-    });
-  }
-
-  /**
-   * Handle user deletion from Clerk
-   */
-  private async handleUserDeleted(clerkId: string) {
-    await this.prisma.user.update({
-      where: { clerkId },
-      data: { isActive: false },
-    });
   }
 
   /**

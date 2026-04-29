@@ -87,7 +87,7 @@ export default function FaqPage() {
           <h1 className="text-2xl font-bold text-primary">{t.faq.faqTitle}</h1>
         </div>
 
-        <Card className="border-t-4 border-t-[#c9a730]">
+        <Card className="border-t-4 border-t-[#C8102E]">
           <CardContent className="p-8 space-y-6">
             <div>
               <h2 className="text-xl font-bold text-primary">{itemDetail.question}</h2>
@@ -218,7 +218,7 @@ export default function FaqPage() {
             <input
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 rounded-lg border border-border focus:ring-2 focus:ring-[#c9a730] focus:border-transparent"
+              className="w-full pl-10 pr-4 py-3 rounded-lg border border-border focus:ring-2 focus:ring-[#C8102E] focus:border-transparent"
               placeholder={t.faq.searchPlaceholder}
               autoFocus
             />
@@ -271,7 +271,7 @@ export default function FaqPage() {
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               onFocus={() => setView('search')}
-              className="w-full pl-10 pr-4 py-3 rounded-lg border border-border focus:ring-2 focus:ring-[#c9a730] focus:border-transparent bg-card"
+              className="w-full pl-10 pr-4 py-3 rounded-lg border border-border focus:ring-2 focus:ring-[#C8102E] focus:border-transparent bg-card"
               placeholder={t.faq.searchPlaceholder}
             />
           </div>
@@ -323,7 +323,7 @@ export default function FaqPage() {
               onClick={() => { setSelectedCat(cat.id); setView('category'); }}
             >
               <CardContent className="p-5 flex items-center gap-4">
-                <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center text-2xl group-hover:bg-[#c9a730]/20 transition-all">
+                <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center text-2xl group-hover:bg-[#C8102E]/20 transition-all">
                   {cat.icon || '📄'}
                 </div>
                 <div className="flex-1 min-w-0">

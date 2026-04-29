@@ -91,7 +91,7 @@ export default function PollsPage() {
               <input
                 value={form.question}
                 onChange={e => setForm(p => ({ ...p, question: e.target.value }))}
-                className="w-full px-4 py-2.5 rounded-lg border border-border focus:ring-2 focus:ring-[#c9a730] focus:border-transparent"
+                className="w-full px-4 py-2.5 rounded-lg border border-border focus:ring-2 focus:ring-[#C8102E] focus:border-transparent"
                 placeholder={t.polls.placeholderQuestion}
               />
             </div>
@@ -101,7 +101,7 @@ export default function PollsPage() {
                 value={form.description}
                 onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
                 rows={2}
-                className="w-full px-4 py-2.5 rounded-lg border border-border focus:ring-2 focus:ring-[#c9a730] focus:border-transparent"
+                className="w-full px-4 py-2.5 rounded-lg border border-border focus:ring-2 focus:ring-[#C8102E] focus:border-transparent"
                 placeholder={t.polls.placeholderDesc}
               />
             </div>
@@ -148,7 +148,7 @@ export default function PollsPage() {
                   type="checkbox"
                   checked={form.isMultiple}
                   onChange={e => setForm(p => ({ ...p, isMultiple: e.target.checked }))}
-                  className="rounded border-[#d4c088]"
+                  className="rounded border-[#C8102E]"
                 />
                 {t.polls.multipleChoice}
               </label>
@@ -157,7 +157,7 @@ export default function PollsPage() {
                   type="checkbox"
                   checked={form.isAnonymous}
                   onChange={e => setForm(p => ({ ...p, isAnonymous: e.target.checked }))}
-                  className="rounded border-[#d4c088]"
+                  className="rounded border-[#C8102E]"
                 />
                 {t.polls.anonymous}
               </label>
@@ -212,7 +212,7 @@ export default function PollsPage() {
           <h1 className="text-2xl font-bold text-primary">{t.polls.results}</h1>
         </div>
 
-        <Card className="border-t-4 border-t-[#c9a730]">
+        <Card className="border-t-4 border-t-[#C8102E]">
           <CardContent className="p-6 space-y-5">
             <div>
               <h2 className="text-xl font-bold text-primary">{pollDetail.question}</h2>
@@ -253,13 +253,13 @@ export default function PollsPage() {
                           {opt.isUserVote && <Check className="w-4 h-4 text-primary" />}
                           {opt.text}
                         </span>
-                        <span className="text-sm font-bold" style={{ color: pct > 50 ? '#c9a730' : '#666' }}>
+                        <span className="text-sm font-bold" style={{ color: pct > 50 ? '#C8102E' : '#666' }}>
                           {pct}%
                         </span>
                       </div>
                       <div className="h-2 bg-muted rounded-full overflow-hidden">
                         <div
-                          className="h-full rounded-full bg-gradient-to-r from-[#c9a730] to-[#e6c200] transition-all"
+                          className="h-full rounded-full bg-gradient-to-r from-[#C8102E] to-[#E8233E] transition-all"
                           style={{ width: `${pct}%` }}
                         />
                       </div>

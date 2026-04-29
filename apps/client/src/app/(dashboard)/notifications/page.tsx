@@ -1,8 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { useUser } from "@/lib/auth-client";
 import { useT } from '@/lib/i18n';
+import { api } from '@/lib/api';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Bell, Loader2 } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
 
 interface Notification {
   id: string;
@@ -22,94 +25,99 @@ const TYPE_ICONS: Record<string, string> = {
 export default function NotificationsPage() {
   const { user } = useUser();
   const { t } = useT();
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api";
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    if (!user?.id) return;
-    fetch(`${apiUrl}/notifications/${user.id}`)
-      .then((r) => r.json())
-      .then((data) => {
-        setNotifications(data.notifications || []);
-        setUnreadCount(data.unreadCount || 0);
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, [user?.id, apiUrl]);
+  const { data, isLoading } = useQuery({
+    queryKey: ['notifications', user?.id],
+    queryFn: () => api.get(`/notifications/${user!.id}`).then((r) => r.data),
+    enabled: !!user?.id,
+  });
 
-  const markAsRead = async (id: string) => {
-    await fetch(`${apiUrl}/notifications/${id}/read`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId: user?.id }),
-    });
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
-    );
-    setUnreadCount((c) => Math.max(0, c - 1));
-  };
+  const notifications: Notification[] = data?.notifications || [];
+  const unreadCount: number = data?.unreadCount || 0;
 
-  const markAllRead = async () => {
-    await fetch(`${apiUrl}/notifications/${user?.id}/read-all`, { method: "PATCH" });
-    setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
-    setUnreadCount(0);
-  };
+  const markRead = useMutation({
+    mutationFn: (id: string) => api.patch(`/notifications/${id}/read`, { userId: user?.id }),
+    onSuccess: (_data, id) => {
+      queryClient.setQueryData(['notifications', user?.id], (old: any) => ({
+        ...old,
+        unreadCount: Math.max(0, (old?.unreadCount || 0) - 1),
+        notifications: old?.notifications?.map((n: Notification) =>
+          n.id === id ? { ...n, isRead: true } : n
+        ),
+      }));
+      queryClient.invalidateQueries({ queryKey: ['notification-badge', user?.id] });
+    },
+  });
 
-  if (loading) {
+  const markAllRead = useMutation({
+    mutationFn: () => api.patch(`/notifications/${user?.id}/read-all`),
+    onSuccess: () => {
+      queryClient.setQueryData(['notifications', user?.id], (old: any) => ({
+        ...old,
+        unreadCount: 0,
+        notifications: old?.notifications?.map((n: Notification) => ({ ...n, isRead: true })),
+      }));
+      queryClient.invalidateQueries({ queryKey: ['notification-badge', user?.id] });
+    },
+  });
+
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center h-96">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
-    <div className="max-w-3xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
+    <div className="max-w-3xl mx-auto space-y-6">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">{t.header.notificationsTooltip}</h1>
+          <h1 className="text-2xl font-bold text-primary font-heading">🔔 {t.header.notificationsTooltip}</h1>
           {unreadCount > 0 && (
-            <p className="text-sm text-muted-foreground">{unreadCount} non lue(s)</p>
+            <p className="text-sm text-muted-foreground mt-0.5">{unreadCount} non lue(s)</p>
           )}
         </div>
         {unreadCount > 0 && (
           <button
-            onClick={markAllRead}
-            className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+            onClick={() => markAllRead.mutate()}
+            disabled={markAllRead.isPending}
+            className="text-sm text-primary hover:text-primary/80 font-semibold disabled:opacity-50 transition"
           >
-            Tout marquer comme lu
+            {markAllRead.isPending ? <Loader2 className="h-4 w-4 animate-spin inline" /> : 'Tout marquer comme lu'}
           </button>
         )}
       </div>
 
-      <div className="space-y-2">
-        {notifications.length === 0 ? (
-          <div className="bg-card rounded-xl p-12 text-center border border-border">
-            <p className="text-4xl mb-4">🔔</p>
-            <p className="text-muted-foreground">Aucune notification</p>
-          </div>
-        ) : (
-          notifications.map((notif) => (
+      {notifications.length === 0 ? (
+        <Card className="border-border">
+          <CardContent className="p-12 text-center">
+            <Bell className="h-16 w-16 mx-auto text-muted-foreground/30 mb-4" />
+            <p className="text-muted-foreground font-medium">Aucune notification</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-2">
+          {notifications.map((notif) => (
             <button
               key={notif.id}
-              onClick={() => !notif.isRead && markAsRead(notif.id)}
+              onClick={() => !notif.isRead && markRead.mutate(notif.id)}
               className={`w-full text-left p-4 rounded-xl border transition-all ${
                 notif.isRead
                   ? "bg-card border-border"
-                  : "bg-blue-500/100/10 border-blue-200 hover:bg-blue-100"
+                  : "bg-primary/5 border-primary/30 hover:bg-primary/10"
               }`}
             >
               <div className="flex items-start gap-3">
-                <span className="text-2xl">{TYPE_ICONS[notif.type] || "🔔"}</span>
+                <span className="text-2xl shrink-0">{TYPE_ICONS[notif.type] || "🔔"}</span>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between">
-                    <p className={`text-sm font-semibold ${notif.isRead ? "text-foreground/80" : "text-foreground"}`}>
+                  <div className="flex items-center justify-between gap-2">
+                    <p className={`text-sm font-semibold truncate ${notif.isRead ? "text-foreground/80" : "text-foreground"}`}>
                       {notif.title}
                     </p>
                     {!notif.isRead && (
-                      <span className="w-2 h-2 bg-blue-500/100/100 rounded-full shrink-0" />
+                      <span className="w-2 h-2 bg-primary rounded-full shrink-0" />
                     )}
                   </div>
                   <p className="text-sm text-muted-foreground mt-0.5">{notif.body}</p>
@@ -121,9 +129,9 @@ export default function NotificationsPage() {
                 </div>
               </div>
             </button>
-          ))
-        )}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -5,6 +5,7 @@ import {
   Body,
   Param,
   Query,
+  Req,
   UseGuards,
   HttpCode,
 } from '@nestjs/common';
@@ -12,7 +13,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger'
 import { AuctionsService } from './auctions.service';
 import { CreateAuctionDto } from './dto/create-auction.dto';
 import { PlaceBidDto } from './dto/place-bid.dto';
-import { ClerkAuthGuard } from '../common/guards/clerk-auth.guard';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 
 @ApiTags('auctions')
@@ -40,14 +41,14 @@ export class AuctionsController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Get auction details with bids' })
-  getAuction(@Param('id') id: string) {
-    return this.auctionsService.getAuction(id);
+  getAuction(@Param('id') id: string, @Req() req: any) {
+    return this.auctionsService.getAuction(id, req.user?.id);
   }
 
   // ==================== Authenticated Endpoints ====================
 
   @Post()
-  @UseGuards(ClerkAuthGuard)
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create a new auction for a listing' })
   createAuction(@CurrentUser('clerkId') clerkId: string, @Body() dto: CreateAuctionDto) {
@@ -55,7 +56,7 @@ export class AuctionsController {
   }
 
   @Post(':id/bid')
-  @UseGuards(ClerkAuthGuard)
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @HttpCode(200)
   @ApiOperation({ summary: 'Place a bid on an auction' })
@@ -68,7 +69,7 @@ export class AuctionsController {
   }
 
   @Get('my/auctions')
-  @UseGuards(ClerkAuthGuard)
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get my auctions (as seller)' })
   getMyAuctions(@CurrentUser('clerkId') clerkId: string) {
@@ -76,7 +77,7 @@ export class AuctionsController {
   }
 
   @Get('my/bids')
-  @UseGuards(ClerkAuthGuard)
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get my bids (as bidder)' })
   getMyBids(@CurrentUser('clerkId') clerkId: string) {
@@ -84,7 +85,7 @@ export class AuctionsController {
   }
 
   @Post(':id/cancel')
-  @UseGuards(ClerkAuthGuard)
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @HttpCode(200)
   @ApiOperation({ summary: 'Cancel an auction (only if no bids)' })

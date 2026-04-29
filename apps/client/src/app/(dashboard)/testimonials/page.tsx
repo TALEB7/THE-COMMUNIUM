@@ -73,11 +73,11 @@ export default function TestimonialsPage() {
             {t.testimonials.title}
           </h1>
           <p className="text-muted-foreground">{t.testimonials.description}</p>
-          <div className="h-0.5 bg-gradient-to-r from-[#c9a730] via-[#e6c200] to-transparent max-w-[120px] mt-1" />
+          <div className="h-0.5 bg-gradient-to-r from-[#C8102E] via-[#E8233E] to-transparent max-w-[120px] mt-1" />
         </div>
         <button
           onClick={() => setShowForm(!showForm)}
-          className="px-4 py-2 bg-gradient-to-r from-[#c9a730] to-[#e6c200] text-primary font-bold text-sm rounded-lg hover:shadow-md transition-all"
+          className="px-4 py-2 bg-gradient-to-r from-[#C8102E] to-[#E8233E] text-primary font-bold text-sm rounded-lg hover:shadow-md transition-all"
         >
           {showForm ? t.common.cancel : t.testimonials.writeTestimonial}
         </button>
@@ -99,7 +99,7 @@ export default function TestimonialsPage() {
                   placeholder={t.testimonials.placeholderContent}
                   rows={4}
                   required
-                  className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#c9a730]/50 resize-none"
+                  className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C8102E]/50 resize-none"
                 />
               </div>
               <div className="grid gap-4 sm:grid-cols-3">
@@ -113,7 +113,7 @@ export default function TestimonialsPage() {
                         onClick={() => setRating(n)}
                         className="p-1"
                       >
-                        <Star className={`h-6 w-6 ${n <= rating ? 'text-primary fill-[#c9a730]' : 'text-muted-foreground/50'}`} />
+                        <Star className={`h-6 w-6 ${n <= rating ? 'text-primary fill-[#C8102E]' : 'text-muted-foreground/50'}`} />
                       </button>
                     ))}
                   </div>
@@ -124,7 +124,7 @@ export default function TestimonialsPage() {
                     value={role}
                     onChange={(e) => setRole(e.target.value)}
                     placeholder={t.testimonials.placeholderRole}
-                    className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#c9a730]/50"
+                    className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C8102E]/50"
                   />
                 </div>
                 <div>
@@ -133,7 +133,7 @@ export default function TestimonialsPage() {
                     value={company}
                     onChange={(e) => setCompany(e.target.value)}
                     placeholder={t.testimonials.placeholderCompany}
-                    className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#c9a730]/50"
+                    className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C8102E]/50"
                   />
                 </div>
               </div>
@@ -207,7 +207,7 @@ export default function TestimonialsPage() {
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-1">
                       {Array.from({ length: 5 }).map((_, i) => (
-                        <Star key={i} className={`h-3.5 w-3.5 ${i < item.rating ? 'text-primary fill-[#c9a730]' : 'text-muted-foreground/50'}`} />
+                        <Star key={i} className={`h-3.5 w-3.5 ${i < item.rating ? 'text-primary fill-[#C8102E]' : 'text-muted-foreground/50'}`} />
                       ))}
                     </div>
                     <Badge variant={item.isApproved ? 'default' : 'secondary'} className="text-xs">
@@ -232,7 +232,7 @@ function TestimonialCard({ testimonial: item, isFeatured }: { testimonial: any; 
         {/* Stars */}
         <div className="flex items-center gap-1 mb-3">
           {Array.from({ length: 5 }).map((_, i) => (
-            <Star key={i} className={`h-4 w-4 ${i < item.rating ? 'text-primary fill-[#c9a730]' : 'text-muted-foreground/30'}`} />
+            <Star key={i} className={`h-4 w-4 ${i < item.rating ? 'text-primary fill-[#C8102E]' : 'text-muted-foreground/30'}`} />
           ))}
           {isFeatured && <Sparkles className="h-3.5 w-3.5 text-primary ml-1" />}
         </div>

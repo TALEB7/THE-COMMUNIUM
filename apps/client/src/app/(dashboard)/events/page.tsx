@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/lib/auth-client';
 import { api } from '@/lib/api';
 import { useT } from '@/lib/i18n';
+import { getMediaUrl } from '@/lib/media-url';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -188,7 +189,7 @@ export default function EventsPage() {
                     <CardContent className="p-5">
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex items-center gap-2">
-                          <Badge variant="outline" className="text-xs border-[#d4c088] text-primary flex items-center gap-1">
+                          <Badge variant="outline" className="text-xs border-[#C8102E] text-primary flex items-center gap-1">
                             <TypeIcon className="h-3 w-3" />
                             {eventTypeLabels[ev.eventType]}
                           </Badge>
@@ -250,7 +251,7 @@ export default function EventsPage() {
               <CardContent className="p-6 space-y-4">
                 <div className="flex items-start justify-between">
                   <div>
-                    <Badge variant="outline" className="text-xs border-[#d4c088] text-primary flex items-center gap-1 w-fit mb-2">
+                    <Badge variant="outline" className="text-xs border-[#C8102E] text-primary flex items-center gap-1 w-fit mb-2">
                       <TypeIcon className="h-3 w-3" />
                       {eventTypeLabels[event.eventType]}
                     </Badge>
@@ -324,7 +325,7 @@ export default function EventsPage() {
                     <button
                       onClick={() => rsvpMutation.mutate(event.id)}
                       disabled={rsvpMutation.isPending || event.status === 'CANCELLED'}
-                      className="flex items-center gap-1.5 px-5 py-2.5 text-sm font-semibold bg-[#c9a730] text-white rounded-lg hover:bg-[#b8962c] disabled:opacity-50 transition"
+                      className="flex items-center gap-1.5 px-5 py-2.5 text-sm font-semibold bg-[#C8102E] text-white rounded-lg hover:bg-[#A60D25] disabled:opacity-50 transition"
                     >
                       {rsvpMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
                       {t.events.rsvpBtn}
@@ -345,7 +346,7 @@ export default function EventsPage() {
                     {event.rsvps.map((r: any) => (
                       <div key={r.id} className="flex items-center gap-2 px-3 py-1.5 bg-muted rounded-full text-xs">
                         <img
-                          src={r.user?.avatarUrl || '/default-avatar.png'}
+                          src={getMediaUrl(r.user?.avatarUrl) || '/default-avatar.png'}
                           alt=""
                           className="w-5 h-5 rounded-full object-cover"
                         />
@@ -480,7 +481,7 @@ export default function EventsPage() {
           <button
             onClick={() => createMutation.mutate()}
             disabled={!form.title || !form.startDate || createMutation.isPending}
-            className="w-full flex items-center justify-center gap-2 py-3 text-sm font-semibold bg-[#c9a730] text-white rounded-lg hover:bg-[#b8962c] disabled:opacity-50 transition"
+            className="w-full flex items-center justify-center gap-2 py-3 text-sm font-semibold bg-[#C8102E] text-white rounded-lg hover:bg-[#A60D25] disabled:opacity-50 transition"
           >
             {createMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
             {t.events.createBtn}

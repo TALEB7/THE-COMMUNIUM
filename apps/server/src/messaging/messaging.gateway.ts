@@ -9,39 +9,39 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { MessagingService } from './messaging.service';
+import { RedisService } from '../redis/redis.service';
 
 @WebSocketGateway({
-  cors: { origin: '*' },
+  cors: { origin: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000', credentials: true },
   namespace: '/chat',
 })
 export class MessagingGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
-  server: Server;
+  server!: Server;
 
-  private onlineUsers = new Map<string, string>(); // userId -> socketId
+  constructor(
+    private readonly messagingService: MessagingService,
+    private readonly redis: RedisService,
+  ) {}
 
-  constructor(private readonly messagingService: MessagingService) {}
-
-  handleConnection(client: Socket) {
+  async handleConnection(client: Socket) {
     const userId = client.handshake.query.userId as string;
     if (userId) {
-      this.onlineUsers.set(userId, client.id);
+      await this.redis.setOnline(userId, client.id);
       this.server.emit('userOnline', { userId });
     }
   }
 
-  handleDisconnect(client: Socket) {
-    const userId = [...this.onlineUsers.entries()].find(
-      ([, socketId]) => socketId === client.id,
-    )?.[0];
+  async handleDisconnect(client: Socket) {
+    const userId = await this.redis.getUserIdBySocket(client.id);
     if (userId) {
-      this.onlineUsers.delete(userId);
+      await this.redis.setOffline(userId);
       this.server.emit('userOffline', { userId });
     }
   }
 
   @SubscribeMessage('joinConversation')
-  async handleJoinConversation(
+  handleJoinConversation(
     @ConnectedSocket() client: Socket,
     @MessageBody() data: { conversationId: string },
   ) {
@@ -49,7 +49,7 @@ export class MessagingGateway implements OnGatewayConnection, OnGatewayDisconnec
   }
 
   @SubscribeMessage('leaveConversation')
-  async handleLeaveConversation(
+  handleLeaveConversation(
     @ConnectedSocket() client: Socket,
     @MessageBody() data: { conversationId: string },
   ) {
@@ -58,7 +58,7 @@ export class MessagingGateway implements OnGatewayConnection, OnGatewayDisconnec
 
   @SubscribeMessage('sendMessage')
   async handleSendMessage(
-    @ConnectedSocket() client: Socket,
+    @ConnectedSocket() _client: Socket,
     @MessageBody()
     data: {
       conversationId: string;
@@ -79,7 +79,7 @@ export class MessagingGateway implements OnGatewayConnection, OnGatewayDisconnec
       data.conversationId,
     );
     for (const p of participants) {
-      if (p.userId !== data.senderId && !this.onlineUsers.has(p.userId)) {
+      if (p.userId !== data.senderId && !(await this.redis.isOnline(p.userId))) {
         // Will be picked up by notification service
       }
     }

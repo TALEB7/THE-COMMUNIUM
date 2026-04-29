@@ -16,6 +16,7 @@ import {
 import { useT } from '@/lib/i18n';
 import { LISTING_STATUS_BADGES } from '@communium/shared';
 import { useMyListings, useDeleteListing, useBoostListing } from '@/hooks/marketplace';
+import { getMediaUrl } from '@/lib/media-url';
 
 export default function MyListingsPage() {
   const { t } = useT();
@@ -81,7 +82,7 @@ export default function MyListingsPage() {
                 <div className="h-24 w-24 flex-shrink-0 overflow-hidden rounded-lg bg-muted">
                   {hasImage ? (
                     <img
-                      src={listing.images[0]}
+                      src={getMediaUrl(listing.images[0]) || listing.images[0]}
                       alt={listing.title}
                       className="h-full w-full object-cover"
                     />
@@ -146,7 +147,7 @@ export default function MyListingsPage() {
                       )}
                       <Link
                         href={`/marketplace/${listing.slug}/edit`}
-                        className="rounded-lg border border-blue-200 px-3 py-1.5 text-xs font-medium text-blue-600 hover:bg-blue-500/100/10"
+                        className="rounded-lg border border-blue-200 px-3 py-1.5 text-xs font-medium text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-500/10"
                         title="Modifier"
                       >
                         <Edit className="h-3 w-3" />

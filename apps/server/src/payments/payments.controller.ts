@@ -12,7 +12,7 @@ import {
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { Request } from 'express';
 import { PaymentsService } from './payments.service';
-import { ClerkAuthGuard } from '../common/guards/clerk-auth.guard';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { CreateSubscriptionDto } from './dto/create-subscription.dto';
 
@@ -25,7 +25,7 @@ export class PaymentsController {
    * Get current user's membership status
    */
   @Get('membership')
-  @UseGuards(ClerkAuthGuard)
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get current membership' })
   async getMembership(@CurrentUser('clerkId') clerkId: string) {
@@ -36,7 +36,7 @@ export class PaymentsController {
    * Subscribe to a plan — creates Stripe checkout session or CMI redirect
    */
   @Post('subscribe')
-  @UseGuards(ClerkAuthGuard)
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Subscribe to a plan' })
   async subscribe(
@@ -73,7 +73,7 @@ export class PaymentsController {
    * Get payment history
    */
   @Get('history')
-  @UseGuards(ClerkAuthGuard)
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get payment history' })
   async getPaymentHistory(@CurrentUser('clerkId') clerkId: string) {

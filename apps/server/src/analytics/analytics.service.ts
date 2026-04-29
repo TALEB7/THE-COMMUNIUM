@@ -1,9 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { AiService } from '../ai/ai.service';
 
 @Injectable()
 export class AnalyticsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly aiService: AiService,
+  ) {}
 
   async trackActivity(data: {
     userId: string;
@@ -141,6 +145,171 @@ export class AnalyticsService {
       users: { thisMonth: usersThisMonth, lastMonth: usersLastMonth, growth: Math.round(userGrowth) },
       revenue: { thisMonth: revThis, lastMonth: revLast, growth: Math.round(revenueGrowth) },
     };
+  }
+
+  /**
+   * Trending categories — pre-aggregate UserActivity (LISTING_VIEW, SEARCH)
+   * into per-category daily buckets and send to the AI trending engine.
+   * Results are advisory; cache server-side if needed.
+   */
+  /**
+   * Churn prediction for a batch of users (or all active users if no ids given).
+   * Aggregates UserActivity, TksWallet, Membership, and listing/session counts
+   * then delegates scoring to the AI service RFM model.
+   */
+  async getChurnRisk(userIds?: string[], riskFilter?: string): Promise<any> {
+    const now = new Date();
+    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+    const where: any = userIds?.length ? { id: { in: userIds } } : {};
+
+    const users = await this.prisma.user.findMany({
+      where,
+      select: {
+        id: true,
+        createdAt: true,
+        tksWallet: { select: { totalSpent: true } },
+        membership: { select: { status: true, plan: true } },
+        _count: { select: { listings: true, mentorshipSessions: true } },
+      },
+      take: 500,
+    });
+
+    if (users.length === 0) return { predictions: [], high_risk_count: 0, medium_risk_count: 0, low_risk_count: 0 };
+
+    // Get last activity date and 30-day action count per user in one query each
+    const userIds_ = users.map((u) => u.id);
+
+    const lastActivities = await this.prisma.userActivity.groupBy({
+      by: ['userId'],
+      where: { userId: { in: userIds_ } },
+      _max: { createdAt: true },
+    });
+
+    const recentActivityCounts = await this.prisma.userActivity.groupBy({
+      by: ['userId'],
+      where: { userId: { in: userIds_ }, createdAt: { gte: thirtyDaysAgo } },
+      _count: { id: true },
+    });
+
+    const lastActivityMap = new Map(lastActivities.map((a: any) => [a.userId, a._max.createdAt]));
+    const activityCountMap = new Map(recentActivityCounts.map((a: any) => [a.userId, a._count.id]));
+
+    // Monthly value per membership plan (in platform currency units)
+    const PLAN_MONTHLY_VALUE: Record<string, number> = {
+      personal_premium: 29,
+      business_premium: 59,
+      company_creation: 99,
+    };
+
+    const payload = users.map((u) => {
+      const lastActive = lastActivityMap.get(u.id) as Date | undefined;
+      const daysSinceLast = lastActive
+        ? (now.getTime() - lastActive.getTime()) / (1000 * 60 * 60 * 24)
+        : 999;
+      const accountAgeDays = Math.round((now.getTime() - u.createdAt.getTime()) / (1000 * 60 * 60 * 24));
+      const accountAgeMonths = Math.max(accountAgeDays / 30, 1);
+      const totalSpent = u.tksWallet?.totalSpent ?? 0;
+      const isActiveMember = u.membership?.status === 'ACTIVE';
+
+      return {
+        user_id:            u.id,
+        days_since_last:    Math.round(daysSinceLast),
+        action_count_30d:   activityCountMap.get(u.id) ?? 0,
+        listing_count:      u._count.listings,
+        session_count:      u._count.mentorshipSessions,
+        tks_spent:          totalSpent,
+        account_age_days:   accountAgeDays,
+        membership_active:  isActiveMember,
+        monthly_tks_spent:  Math.round((totalSpent / accountAgeMonths) * 100) / 100,
+        membership_revenue: isActiveMember
+          ? (PLAN_MONTHLY_VALUE[u.membership!.plan] ?? 0)
+          : 0,
+      };
+    });
+
+    const result = await this.aiService.predictChurn(payload);
+
+    // Optionally filter by risk level
+    if (riskFilter) {
+      result.predictions = result.predictions.filter(
+        (p: any) => p.risk_level === riskFilter.toUpperCase(),
+      );
+    }
+
+    return result;
+  }
+
+  async getTrendingCategories(windowDays = 7, topK = 10): Promise<any> {
+    const since = new Date(Date.now() - windowDays * 2 * 24 * 60 * 60 * 1000); // 2× window for growth comparison
+
+    // Aggregate listing views per category per day from UserActivity
+    const viewActivities = await this.prisma.userActivity.findMany({
+      where: {
+        action: 'LISTING_VIEW',
+        createdAt: { gte: since },
+        metadata: { not: undefined },
+      },
+      select: { metadata: true, createdAt: true },
+    });
+
+    const searchActivities = await this.prisma.userActivity.findMany({
+      where: { action: 'SEARCH', createdAt: { gte: since } },
+      select: { metadata: true, createdAt: true },
+    });
+
+    // Aggregate listing counts per category
+    const listingCounts = await this.prisma.listing.groupBy({
+      by: ['categoryId'],
+      where: { status: 'ACTIVE' },
+      _count: { id: true },
+    });
+
+    const categories = await this.prisma.category.findMany({ select: { id: true, name: true } });
+    const categoryMap = new Map(categories.map((c) => [c.id, c.name]));
+    const listingCountMap = new Map(listingCounts.map((l: any) => [l.categoryId, l._count.id]));
+
+    // Build per-category per-date buckets
+    type Bucket = { view_count: number; search_count: number; listing_count: number };
+    const buckets = new Map<string, Map<string, Bucket>>(); // category → date → bucket
+
+    const dateKey = (d: Date) => d.toISOString().slice(0, 10);
+
+    for (const act of viewActivities) {
+      const meta = act.metadata as any;
+      const catId = meta?.categoryId as string | undefined;
+      if (!catId) continue;
+      const catName = categoryMap.get(catId);
+      if (!catName) continue;
+      const dk = dateKey(act.createdAt);
+      if (!buckets.has(catName)) buckets.set(catName, new Map());
+      const dayMap = buckets.get(catName)!;
+      if (!dayMap.has(dk)) dayMap.set(dk, { view_count: 0, search_count: 0, listing_count: listingCountMap.get(catId) ?? 0 });
+      dayMap.get(dk)!.view_count++;
+    }
+
+    for (const act of searchActivities) {
+      const meta = act.metadata as any;
+      const catName = meta?.category as string | undefined;
+      if (!catName) continue;
+      const dk = dateKey(act.createdAt);
+      if (!buckets.has(catName)) buckets.set(catName, new Map());
+      const dayMap = buckets.get(catName)!;
+      if (!dayMap.has(dk)) dayMap.set(dk, { view_count: 0, search_count: 0, listing_count: 0 });
+      dayMap.get(dk)!.search_count++;
+    }
+
+    // Flatten to data points array
+    const dataPoints: Array<{ category: string; date: string; view_count: number; search_count: number; listing_count: number }> = [];
+    for (const [category, dayMap] of buckets.entries()) {
+      for (const [date, counts] of dayMap.entries()) {
+        dataPoints.push({ category, date, ...counts });
+      }
+    }
+
+    if (dataPoints.length === 0) return { trending: [], computed_at: new Date().toISOString() };
+
+    return this.aiService.getTrendingCategories({ dataPoints, topK, windowDays });
   }
 
   /**

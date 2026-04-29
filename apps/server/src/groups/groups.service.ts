@@ -1,9 +1,13 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { RedisService } from '../redis/redis.service';
 
 @Injectable()
 export class GroupsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private redis: RedisService,
+  ) {}
 
   // ── Browse Groups ──
 
@@ -192,6 +196,9 @@ export class GroupsService {
   // ── Group Comments ──
 
   async addGroupComment(data: { postId: string; authorId: string; content: string; parentId?: string }) {
+    const post = await this.prisma.groupPost.findUnique({ where: { id: data.postId }, select: { groupId: true } });
+    if (!post) throw new NotFoundException('Publication non trouvée');
+
     const comment = await this.prisma.groupComment.create({
       data: {
         postId: data.postId,
@@ -204,6 +211,62 @@ export class GroupsService {
       },
     });
     await this.prisma.groupPost.update({ where: { id: data.postId }, data: { commentCount: { increment: 1 } } });
+
+    // Broadcast via Redis Pub/Sub → FeedGateway
+    await this.redis.publish('group:comments', {
+      postId: data.postId,
+      groupId: post.groupId,
+      comment,
+    });
+
     return comment;
+  }
+
+  // ── Likes ──
+
+  async toggleLike(postId: string, userId: string) {
+    const post = await this.prisma.groupPost.findUnique({
+      where: { id: postId },
+      select: { id: true, groupId: true, likeCount: true },
+    });
+    if (!post) throw new NotFoundException('Publication non trouvée');
+
+    const existing = await this.prisma.groupLike.findUnique({
+      where: { postId_userId: { postId, userId } },
+    });
+
+    let liked: boolean;
+    let likeCount: number;
+
+    if (existing) {
+      await this.prisma.groupLike.delete({ where: { postId_userId: { postId, userId } } });
+      const updated = await this.prisma.groupPost.update({
+        where: { id: postId },
+        data: { likeCount: { decrement: 1 } },
+        select: { likeCount: true },
+      });
+      liked = false;
+      likeCount = updated.likeCount;
+    } else {
+      await this.prisma.groupLike.create({ data: { postId, userId } });
+      const updated = await this.prisma.groupPost.update({
+        where: { id: postId },
+        data: { likeCount: { increment: 1 } },
+        select: { likeCount: true },
+      });
+      liked = true;
+      likeCount = updated.likeCount;
+    }
+
+    // Broadcast via Redis Pub/Sub → FeedGateway
+    await this.redis.publish('group:likes', {
+      postId,
+      groupId: post.groupId,
+      userId,
+      likeCount,
+      liked,
+    });
+
+    return { liked, likeCount };
   }
 }

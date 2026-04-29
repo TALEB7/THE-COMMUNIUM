@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/lib/auth-client';
 import { api } from '@/lib/api';
 import { useT } from '@/lib/i18n';
+import { getMediaUrl } from '@/lib/media-url';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -29,15 +30,15 @@ export default function FeedPage() {
   const { userId } = useAuth();
   const [feedType, setFeedType] = useState<FeedType>('global');
 
-  const typeConfig: Record<string, { icon: any; label: string; color: string }> = {
-    POST: { icon: MessageCircle, label: t.feed.post, color: '#1a237e' },
-    LISTING: { icon: ShoppingBag, label: t.feed.listing, color: '#2e7d32' },
-    AUCTION: { icon: Gavel, label: t.feed.auctionType, color: '#e65100' },
-    EVENT: { icon: Calendar, label: t.feed.event, color: '#6a1b9a' },
-    CONNECTION: { icon: Link2, label: t.feed.connection, color: '#0277bd' },
-    GROUP_JOIN: { icon: Users, label: t.feed.group, color: '#00695c' },
-    MENTORSHIP: { icon: GraduationCap, label: t.feed.mentorshipType, color: '#4527a0' },
-    ACHIEVEMENT: { icon: Trophy, label: t.feed.achievement, color: '#c9a730' },
+  const typeConfig: Record<string, { icon: any; label: string; bg: string; text: string }> = {
+    POST:        { icon: MessageCircle, label: t.feed.post,           bg: 'bg-blue-500/10',    text: 'text-blue-600 dark:text-blue-400' },
+    LISTING:     { icon: ShoppingBag,  label: t.feed.listing,         bg: 'bg-green-500/10',   text: 'text-green-600 dark:text-green-400' },
+    AUCTION:     { icon: Gavel,        label: t.feed.auctionType,     bg: 'bg-orange-500/10',  text: 'text-orange-600 dark:text-orange-400' },
+    EVENT:       { icon: Calendar,     label: t.feed.event,           bg: 'bg-purple-500/10',  text: 'text-purple-600 dark:text-purple-400' },
+    CONNECTION:  { icon: Link2,        label: t.feed.connection,      bg: 'bg-sky-500/10',     text: 'text-sky-600 dark:text-sky-400' },
+    GROUP_JOIN:  { icon: Users,        label: t.feed.group,           bg: 'bg-teal-500/10',    text: 'text-teal-600 dark:text-teal-400' },
+    MENTORSHIP:  { icon: GraduationCap,label: t.feed.mentorshipType,  bg: 'bg-indigo-500/10',  text: 'text-indigo-600 dark:text-indigo-400' },
+    ACHIEVEMENT: { icon: Trophy,       label: t.feed.achievement,     bg: 'bg-primary/10',     text: 'text-primary' },
   };
 
   // Global feed
@@ -83,7 +84,7 @@ export default function FeedPage() {
           <p className="text-sm text-muted-foreground">{t.feed.description}</p>
         </div>
         {stats && (
-          <Badge variant="outline" className="border-[#d4c088] text-primary text-xs">
+          <Badge variant="outline" className="border-[#C8102E] text-primary text-xs">
             {stats.totalActivities} {t.feed.activities}
           </Badge>
         )}
@@ -136,18 +137,15 @@ export default function FeedPage() {
                 <CardContent className="p-4">
                   <div className="flex items-start gap-3">
                     {/* Activity type icon */}
-                    <div
-                      className="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
-                      style={{ backgroundColor: config.color + '15' }}
-                    >
-                      <Icon className="h-5 w-5" style={{ color: config.color }} />
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${config.bg}`}>
+                      <Icon className={`h-5 w-5 ${config.text}`} />
                     </div>
 
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <img
-                            src={item.user?.avatarUrl || '/default-avatar.png'}
+                            src={getMediaUrl(item.user?.avatarUrl) || '/default-avatar.png'}
                             alt=""
                             className="w-6 h-6 rounded-full object-cover"
                           />
@@ -156,11 +154,7 @@ export default function FeedPage() {
                               {item.user?.firstName} {item.user?.lastName}
                             </span>
                           </p>
-                          <Badge
-                            variant="outline"
-                            className="text-[10px] px-1.5 py-0"
-                            style={{ borderColor: config.color + '40', color: config.color }}
-                          >
+                          <Badge variant="outline" className={`text-[10px] px-1.5 py-0 border-current ${config.text}`}>
                             {config.label}
                           </Badge>
                         </div>
@@ -206,8 +200,7 @@ export default function FeedPage() {
                 return (
                   <div
                     key={type}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium"
-                    style={{ backgroundColor: config.color + '10', color: config.color }}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium ${config.bg} ${config.text}`}
                   >
                     <Icon className="h-3 w-3" />
                     {config.label}: {count}

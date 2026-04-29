@@ -68,7 +68,7 @@ export function ListingFilters({
           <SlidersHorizontal className="h-4 w-4" />
           Filtres
           {hasActiveFilters && (
-            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#c9a730] text-xs text-white">
+            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#C8102E] text-xs text-white">
               !
             </span>
           )}

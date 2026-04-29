@@ -6,11 +6,18 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'img.clerk.com',
+        hostname: '*.r2.cloudflarestorage.com',
+      },
+      // Local NestJS uploads — dev & LAN access
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+        port: '4000',
       },
       {
-        protocol: 'https',
-        hostname: '*.r2.cloudflarestorage.com',
+        protocol: 'http',
+        hostname: '192.168.1.7',
+        port: '4000',
       },
     ],
   },

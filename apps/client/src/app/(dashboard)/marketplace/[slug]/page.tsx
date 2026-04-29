@@ -13,8 +13,11 @@ import {
   useToggleFavorite,
   useSubmitReview,
   useBoostListing,
+  useSimilarListings,
+  useListingEta,
+  useListingReviewSentiment,
 } from '@/hooks/marketplace';
-import { ImageGallery, ReviewSection, ListingSidebar } from '@/components/marketplace';
+import { ImageGallery, ReviewSection, ListingSidebar, SimilarListingsSection, ListingAiInsights } from '@/components/marketplace';
 
 export default function ListingDetailPage() {
   const { t } = useT();
@@ -25,6 +28,9 @@ export default function ListingDetailPage() {
   // Queries
   const { data: listing, isLoading } = useListingBySlug(slug);
   const { data: reviews } = useListingReviews(listing?.id);
+  const { data: similarListings = [], isLoading: isSimilarLoading } = useSimilarListings(listing?.id);
+  const { data: eta, isLoading: etaLoading } = useListingEta(listing?.id);
+  const { data: sentiment, isLoading: sentimentLoading } = useListingReviewSentiment(listing?.id);
 
   // Mutations
   const favMutation = useToggleFavorite(slug);
@@ -114,6 +120,14 @@ export default function ListingDetailPage() {
         </div>
 
         {/* Right - Price & Seller */}
+        <div className="space-y-4">
+        <ListingAiInsights
+          eta={eta}
+          etaLoading={etaLoading}
+          sentiment={sentiment}
+          sentimentLoading={sentimentLoading}
+          reviewCount={reviewList.length}
+        />
         <ListingSidebar
           listing={listing}
           onToggleFavorite={(id) => favMutation.mutate(id)}
@@ -124,7 +138,14 @@ export default function ListingDetailPage() {
           }}
           isBoosting={boostMutation.isPending}
         />
+        </div>
       </div>
+
+      <SimilarListingsSection
+        listingId={listing?.id}
+        isLoading={isSimilarLoading}
+        listings={similarListings}
+      />
     </div>
   );
 }

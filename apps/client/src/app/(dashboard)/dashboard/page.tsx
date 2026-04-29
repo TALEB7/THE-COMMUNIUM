@@ -20,10 +20,10 @@ import {
   Bookmark,
   MessagesSquare,
   Activity,
-  Loader2,
   CreditCard,
   ArrowRight,
 } from 'lucide-react';
+import { DashboardSkeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
 
 export default function DashboardPage() {
@@ -37,13 +37,7 @@ export default function DashboardPage() {
     enabled: !!userId,
   });
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-96">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
+  if (isLoading) return <DashboardSkeleton />;
 
   const stats = dashboard?.stats || {};
   const tokens = dashboard?.tokens || {};
@@ -59,7 +53,7 @@ export default function DashboardPage() {
           {t.dashboard.greeting}, {user?.firstName ?? dashboard?.user?.firstName ?? 'Demo'} !
         </h1>
         <p className="text-muted-foreground">{t.dashboard.overview}</p>
-        <div className="h-0.5 bg-gradient-to-r from-[#c9a730] via-[#e6c200] to-transparent max-w-xs mt-2" />
+        <div className="h-0.5 bg-gradient-to-r from-[#C8102E] via-[#E8233E] to-transparent max-w-xs mt-2" />
       </div>
 
       {/* Top Row — Key Metrics */}
@@ -94,7 +88,7 @@ export default function DashboardPage() {
         <Card className="border-border">
           <CardContent className="pt-5 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-blue-500/100/10 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center">
                 <MessageCircle className="h-5 w-5 text-blue-500" />
               </div>
               <div>

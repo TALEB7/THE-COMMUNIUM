@@ -3,6 +3,9 @@
 import { useState, useEffect, useRef } from "react";
 import { useUser } from "@/lib/auth-client";
 import { useT } from '@/lib/i18n';
+import { api } from '@/lib/api';
+import { useQuery } from '@tanstack/react-query';
+import { MessageSquare, Loader2, Send } from 'lucide-react';
 
 interface Conversation {
   id: string;
@@ -10,7 +13,6 @@ interface Conversation {
   lastMessage: string | null;
   lastActivity: string;
   participants: { user: { id: string; firstName: string; lastName: string; imageUrl?: string } }[];
-  messages: { content: string; createdAt: string }[];
 }
 
 interface Message {
@@ -25,51 +27,44 @@ interface Message {
 export default function MessagesPage() {
   const { user } = useUser();
   const { t } = useT();
-  const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeConv, setActiveConv] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api";
 
-  useEffect(() => {
-    if (!user?.id) return;
-    fetch(`${apiUrl}/messaging/conversations/${user.id}`)
-      .then((r) => r.json())
-      .then(setConversations)
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, [user?.id, apiUrl]);
+  const { data: conversations = [], isLoading } = useQuery<Conversation[]>({
+    queryKey: ['conversations', user?.id],
+    queryFn: () => api.get(`/messaging/conversations/${user!.id}`).then((r) => r.data),
+    enabled: !!user?.id,
+  });
 
+  // Load messages when conversation changes
   useEffect(() => {
     if (!activeConv) return;
-    fetch(`${apiUrl}/messaging/conversations/${activeConv}/messages`)
-      .then((r) => r.json())
-      .then((msgs) => setMessages(msgs.reverse()))
+    api.get(`/messaging/conversations/${activeConv}/messages`)
+      .then((r) => setMessages([...r.data].reverse()))
       .catch(() => {});
-  }, [activeConv, apiUrl]);
+  }, [activeConv]);
 
+  // Scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
   const sendMessage = async () => {
-    if (!newMessage.trim() || !activeConv || !user?.id) return;
+    if (!newMessage.trim() || !activeConv || !user?.id || sending) return;
+    setSending(true);
     try {
-      const res = await fetch(`${apiUrl}/messaging/messages`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          conversationId: activeConv,
-          senderId: user.id,
-          content: newMessage,
-        }),
+      const { data: msg } = await api.post(`/messaging/messages`, {
+        conversationId: activeConv,
+        senderId: user.id,
+        content: newMessage,
       });
-      const msg = await res.json();
       setMessages((prev) => [...prev, msg]);
       setNewMessage("");
     } catch {}
+    setSending(false);
   };
 
   const getOtherParticipant = (conv: Conversation) => {
@@ -77,43 +72,44 @@ export default function MessagesPage() {
     return other?.user || { firstName: "Inconnu", lastName: "" };
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center h-96">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
     <div className="flex h-[calc(100vh-80px)] bg-card rounded-xl shadow-sm border border-border overflow-hidden">
-      {/* Sidebar */}
-      <div className="w-80 border-r border-border flex flex-col">
+      {/* Conversation list */}
+      <div className="w-72 border-r border-border flex flex-col shrink-0">
         <div className="p-4 border-b border-border">
-          <h2 className="text-lg font-bold text-foreground">{t.header.messagesTooltip}</h2>
+          <h2 className="text-base font-bold text-foreground">{t.header.messagesTooltip}</h2>
         </div>
         <div className="flex-1 overflow-y-auto">
           {conversations.length === 0 ? (
-            <div className="p-6 text-center text-muted-foreground text-sm">
-              Aucune conversation
-            </div>
+            <div className="p-6 text-center text-muted-foreground text-sm">Aucune conversation</div>
           ) : (
             conversations.map((conv) => {
               const other = getOtherParticipant(conv);
+              const isActive = activeConv === conv.id;
               return (
                 <button
                   key={conv.id}
                   onClick={() => setActiveConv(conv.id)}
-                  className={`w-full text-left p-4 border-b border-border hover:bg-muted transition-colors ${
-                    activeConv === conv.id ? "bg-blue-500/100/10 border-l-4 border-l-blue-500" : ""
+                  className={`w-full text-left p-4 border-b border-border transition-colors ${
+                    isActive
+                      ? "bg-primary/10 border-l-4 border-l-primary"
+                      : "hover:bg-muted"
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-semibold text-sm">
+                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-sm shrink-0">
                       {other.firstName?.[0]}{other.lastName?.[0]}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-foreground text-sm">
+                      <p className="font-medium text-foreground text-sm truncate">
                         {other.firstName} {other.lastName}
                       </p>
                       <p className="text-xs text-muted-foreground truncate">
@@ -129,60 +125,50 @@ export default function MessagesPage() {
       </div>
 
       {/* Chat area */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col min-w-0">
         {!activeConv ? (
           <div className="flex-1 flex items-center justify-center text-muted-foreground">
             <div className="text-center">
-              <svg className="w-16 h-16 mx-auto mb-4 text-muted-foreground/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-              </svg>
-              <p className="text-lg">Sélectionnez une conversation</p>
+              <MessageSquare className="w-16 h-16 mx-auto mb-4 text-muted-foreground/30" />
+              <p className="text-lg font-medium">Sélectionnez une conversation</p>
             </div>
           </div>
         ) : (
           <>
-            {/* Messages */}
             <div className="flex-1 overflow-y-auto p-4 space-y-3">
-              {messages.map((msg) => (
-                <div
-                  key={msg.id}
-                  className={`flex ${msg.senderId === user?.id ? "justify-end" : "justify-start"}`}
-                >
-                  <div
-                    className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl ${
-                      msg.senderId === user?.id
-                        ? "bg-blue-600 text-white"
-                        : "bg-muted text-foreground"
-                    }`}
-                  >
-                    <p className="text-sm">{msg.content}</p>
-                    <p className={`text-xs mt-1 ${msg.senderId === user?.id ? "text-blue-200" : "text-muted-foreground"}`}>
-                      {new Date(msg.createdAt).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
-                    </p>
+              {messages.map((msg) => {
+                const isMine = msg.senderId === user?.id;
+                return (
+                  <div key={msg.id} className={`flex ${isMine ? "justify-end" : "justify-start"}`}>
+                    <div className={`max-w-xs lg:max-w-md px-4 py-2.5 rounded-2xl ${
+                      isMine ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"
+                    }`}>
+                      <p className="text-sm">{msg.content}</p>
+                      <p className={`text-xs mt-1 ${isMine ? "text-primary-foreground/60" : "text-muted-foreground"}`}>
+                        {new Date(msg.createdAt).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Input */}
             <div className="p-4 border-t border-border">
               <div className="flex items-center gap-2">
                 <input
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+                  onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && sendMessage()}
                   placeholder="Tapez votre message..."
-                  className="flex-1 px-4 py-2.5 bg-muted rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="flex-1 px-4 py-2.5 bg-muted rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 transition"
                 />
                 <button
                   onClick={sendMessage}
-                  disabled={!newMessage.trim()}
-                  className="px-4 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:bg-muted disabled:cursor-not-allowed"
+                  disabled={!newMessage.trim() || sending}
+                  className="p-2.5 bg-primary text-primary-foreground rounded-xl hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed transition"
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                  </svg>
+                  {sending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
                 </button>
               </div>
             </div>

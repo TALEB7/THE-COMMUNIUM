@@ -1,38 +1,42 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { AiService } from '../ai/ai.service';
 
 @Injectable()
 export class RecommendationsService {
-  constructor(private prisma: PrismaService) {}
+  private readonly logger = new Logger(RecommendationsService.name);
 
-  // Generate recommendations for a user based on their activity
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly aiService: AiService,
+  ) {}
+
   async generateRecommendations(userId: string) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       include: {
         personalProfile: { select: { interests: true } },
-        favoriteListings: { include: { listing: { select: { categoryId: true, tags: true } } } },
-        bids: { include: { auction: { include: { listing: { select: { categoryId: true } } } } }, take: 10 },
+        favoriteListings: {
+          include: {
+            listing: {
+              select: {
+                id: true,
+                categoryId: true,
+                tags: true,
+                embedding: { select: { embedding: true } },
+              },
+            },
+          },
+        },
+        bids: {
+          include: { auction: { include: { listing: { select: { categoryId: true } } } } },
+          take: 10,
+        },
       },
     });
 
     if (!user) return [];
 
-    // Collect user interests / favorite categories
-    const interests = user.personalProfile?.interests || [];
-    const favoriteCategoryIds = user.favoriteListings.map((f: any) => f.listing.categoryId);
-    const bidCategoryIds = user.bids.map((b: any) => b.auction.listing.categoryId);
-    const allCategoryIds = [...new Set([...favoriteCategoryIds, ...bidCategoryIds])];
-    const allTags = [
-      ...new Set(user.favoriteListings.flatMap((f: any) => f.listing.tags)),
-    ];
-
-    // Clear old non-viewed recommendations
-    await this.prisma.recommendation.deleteMany({
-      where: { userId, isViewed: false, isDismissed: false },
-    });
-
-    // Find listings the user hasn't seen
     const existingListingIds = (
       await this.prisma.recommendation.findMany({
         where: { userId },
@@ -47,29 +51,60 @@ export class RecommendationsService {
       })
     ).map((l: any) => l.id);
 
-    const excludeIds = [...existingListingIds, ...ownListingIds];
+    const excludeIds = new Set([...existingListingIds, ...ownListingIds]);
 
-    // Strategy 1: Category match
-    let categoryListings: any[] = [];
+    // Clear stale non-viewed recommendations
+    await this.prisma.recommendation.deleteMany({
+      where: { userId, isViewed: false, isDismissed: false },
+    });
+
+    const recommendations: any[] = [];
+
+    // ── Strategy 0: AI — Embedding-based (MMR) ────────────────────────────
+    try {
+      const semanticRecs = await this._generateSemanticRecommendations(
+        userId,
+        user,
+        excludeIds,
+      );
+      for (const r of semanticRecs) {
+        recommendations.push(r);
+        excludeIds.add(r.listingId);
+      }
+    } catch (err: any) {
+      // AI service unavailable — log and fall through to rule-based strategies
+      this.logger.warn(`Semantic recommendations unavailable for ${userId}: ${err.message}`);
+    }
+
+    // ── Strategy 1: Category history ──────────────────────────────────────
+    const interests = user.personalProfile?.interests || [];
+    const favoriteCategoryIds = user.favoriteListings.map((f: any) => f.listing.categoryId);
+    const bidCategoryIds = user.bids.map((b: any) => b.auction.listing.categoryId);
+    const allCategoryIds = [...new Set([...favoriteCategoryIds, ...bidCategoryIds])];
+    const allTags = [...new Set(user.favoriteListings.flatMap((f: any) => f.listing.tags))];
+
     if (allCategoryIds.length > 0) {
-      categoryListings = await this.prisma.listing.findMany({
+      const categoryListings = await this.prisma.listing.findMany({
         where: {
           status: 'ACTIVE',
           categoryId: { in: allCategoryIds },
-          id: { notIn: excludeIds },
+          id: { notIn: [...excludeIds] },
         },
         take: 10,
         orderBy: { createdAt: 'desc' },
       });
+      for (const l of categoryListings) {
+        recommendations.push({ userId, listingId: l.id, score: 0.8, reason: 'CATEGORY_HISTORY' });
+        excludeIds.add(l.id);
+      }
     }
 
-    // Strategy 2: Interest/tag match
-    let tagListings: any[] = [];
+    // ── Strategy 2: Interest/tag match ────────────────────────────────────
     if (allTags.length > 0 || interests.length > 0) {
-      tagListings = await this.prisma.listing.findMany({
+      const tagListings = await this.prisma.listing.findMany({
         where: {
           status: 'ACTIVE',
-          id: { notIn: [...excludeIds, ...categoryListings.map((l) => l.id)] },
+          id: { notIn: [...excludeIds] },
           OR: [
             ...(allTags.length > 0 ? [{ tags: { hasSome: allTags } }] : []),
             ...(interests.length > 0 ? [{ tags: { hasSome: interests } }] : []),
@@ -78,43 +113,20 @@ export class RecommendationsService {
         take: 10,
         orderBy: { createdAt: 'desc' },
       });
+      for (const l of tagListings) {
+        recommendations.push({ userId, listingId: l.id, score: 0.6, reason: 'INTEREST_MATCH' });
+        excludeIds.add(l.id);
+      }
     }
 
-    // Strategy 3: Trending (most viewed)
+    // ── Strategy 3: Trending (most viewed) ───────────────────────────────
     const trendingListings = await this.prisma.listing.findMany({
-      where: {
-        status: 'ACTIVE',
-        id: { notIn: [...excludeIds, ...categoryListings.map((l) => l.id), ...tagListings.map((l) => l.id)] },
-      },
+      where: { status: 'ACTIVE', id: { notIn: [...excludeIds] } },
       take: 5,
       orderBy: { viewCount: 'desc' },
     });
-
-    // Build recommendation entries
-    const recommendations: any[] = [];
-    for (const listing of categoryListings) {
-      recommendations.push({
-        userId,
-        listingId: listing.id,
-        score: 0.8,
-        reason: 'CATEGORY_HISTORY',
-      });
-    }
-    for (const listing of tagListings) {
-      recommendations.push({
-        userId,
-        listingId: listing.id,
-        score: 0.6,
-        reason: 'INTEREST_MATCH',
-      });
-    }
-    for (const listing of trendingListings) {
-      recommendations.push({
-        userId,
-        listingId: listing.id,
-        score: 0.4,
-        reason: 'TRENDING',
-      });
+    for (const l of trendingListings) {
+      recommendations.push({ userId, listingId: l.id, score: 0.4, reason: 'TRENDING' });
     }
 
     if (recommendations.length > 0) {
@@ -127,7 +139,86 @@ export class RecommendationsService {
     return { generated: recommendations.length };
   }
 
-  // Get user recommendations
+  /**
+   * Build a user taste vector (centroid of favorited + recently viewed embeddings)
+   * then call the MMR recommendation engine in the AI service.
+   */
+  private async _generateSemanticRecommendations(
+    userId: string,
+    user: any,
+    excludeIds: Set<string>,
+  ): Promise<any[]> {
+    // 1. Collect embeddings from favorites
+    const favoriteEmbeddings: number[][] = user.favoriteListings
+      .map((f: any) => f.listing.embedding?.embedding)
+      .filter(Boolean) as number[][];
+
+    // 2. Collect embeddings from last 10 viewed listings
+    const recentViews = await this.prisma.userActivity.findMany({
+      where: { userId, action: 'LISTING_VIEW' },
+      orderBy: { createdAt: 'desc' },
+      take: 10,
+      select: { metadata: true },
+    });
+
+    const viewedListingIds = recentViews
+      .map((a: any) => (a.metadata as any)?.listingId as string | undefined)
+      .filter(Boolean) as string[];
+
+    if (viewedListingIds.length > 0) {
+      const viewedEmbeddings = await this.prisma.listingEmbedding.findMany({
+        where: { listingId: { in: viewedListingIds } },
+        select: { embedding: true },
+      });
+      for (const e of viewedEmbeddings) {
+        favoriteEmbeddings.push(e.embedding as number[]);
+      }
+    }
+
+    if (favoriteEmbeddings.length === 0) return [];
+
+    // 3. Centroid = mean of all embeddings, then L2-normalise
+    const dim = favoriteEmbeddings[0].length;
+    const centroid = new Array(dim).fill(0);
+    for (const emb of favoriteEmbeddings) {
+      for (let i = 0; i < dim; i++) centroid[i] += emb[i];
+    }
+    for (let i = 0; i < dim; i++) centroid[i] /= favoriteEmbeddings.length;
+
+    const norm = Math.sqrt(centroid.reduce((s, v) => s + v * v, 0));
+    const unitCentroid = norm > 0 ? centroid.map((v) => v / norm) : centroid;
+
+    // 4. Load up to 500 candidate embeddings (active, unseen by this user)
+    const candidates = await this.prisma.listingEmbedding.findMany({
+      where: {
+        listing: { status: 'ACTIVE', sellerId: { not: userId } },
+        listingId: { notIn: [...excludeIds] },
+      },
+      take: 500,
+      select: { listingId: true, embedding: true },
+    });
+
+    if (candidates.length === 0) return [];
+
+    // 5. Call MMR ranker
+    const results = await this.aiService.getPersonalizedRecommendations({
+      userEmbedding: unitCentroid,
+      candidates: candidates.map((c) => ({
+        listing_id: c.listingId,
+        embedding: c.embedding as number[],
+      })),
+      topK: 20,
+      diversityLambda: 0.3,
+    });
+
+    return results.map((r) => ({
+      userId,
+      listingId: r.listing_id,
+      score: r.final_score,
+      reason: 'SEMANTIC_MATCH',
+    }));
+  }
+
   async getUserRecommendations(userId: string, page = 1, limit = 20) {
     const [items, total] = await Promise.all([
       this.prisma.recommendation.findMany({
@@ -151,19 +242,11 @@ export class RecommendationsService {
     return { recommendations: items, total, page, totalPages: Math.ceil(total / limit) };
   }
 
-  // Mark as viewed
   async markViewed(id: string) {
-    return this.prisma.recommendation.update({
-      where: { id },
-      data: { isViewed: true },
-    });
+    return this.prisma.recommendation.update({ where: { id }, data: { isViewed: true } });
   }
 
-  // Dismiss recommendation
   async dismiss(id: string) {
-    return this.prisma.recommendation.update({
-      where: { id },
-      data: { isDismissed: true },
-    });
+    return this.prisma.recommendation.update({ where: { id }, data: { isDismissed: true } });
   }
 }

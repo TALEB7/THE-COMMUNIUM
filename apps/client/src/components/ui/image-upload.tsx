@@ -249,7 +249,7 @@ export function ImageUpload({
                 <button
                   type="button"
                   onClick={() => removeImage(idx)}
-                  className="rounded-full bg-destructive/100 p-1 text-white shadow hover:bg-red-600"
+                  className="rounded-full bg-destructive p-1 text-white shadow hover:bg-red-600"
                 >
                   <X className="h-3 w-3" />
                 </button>

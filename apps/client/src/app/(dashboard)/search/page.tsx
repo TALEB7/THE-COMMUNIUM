@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/lib/auth-client';
 import Link from 'next/link';
 import { api } from '@/lib/api';
+import { getMediaUrl } from '@/lib/media-url';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -248,7 +249,7 @@ export default function SearchPage() {
                       {listing.images?.[0] && (
                         <div className="w-full h-40 rounded-lg overflow-hidden mb-3 bg-muted">
                           <img
-                            src={listing.images[0]}
+                            src={getMediaUrl(listing.images[0]) || listing.images[0]}
                             alt={listing.title}
                             className="w-full h-full object-cover"
                           />
@@ -263,7 +264,7 @@ export default function SearchPage() {
                         </div>
                       )}
                       {listing.category && (
-                        <Badge variant="outline" className="mt-2 text-xs border-[#d4c088]">
+                        <Badge variant="outline" className="mt-2 text-xs border-[#C8102E]">
                           {listing.category.name}
                         </Badge>
                       )}
@@ -297,7 +298,7 @@ export default function SearchPage() {
                   <CardContent className="p-4 flex items-center gap-4">
                     <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#1a237e] to-[#3949ab] flex items-center justify-center border-2 border-primary">
                       {user.avatarUrl ? (
-                        <img src={user.avatarUrl} alt="" className="w-full h-full rounded-full object-cover" />
+                        <img src={getMediaUrl(user.avatarUrl) || ''} alt="" className="w-full h-full rounded-full object-cover" />
                       ) : (
                         <span className="text-[#ffd700] font-bold text-sm">
                           {user.firstName?.[0]}{user.lastName?.[0]}

@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Body, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { TokensService } from './tokens.service';
-import { ClerkAuthGuard } from '../common/guards/clerk-auth.guard';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 
 @ApiTags('tokens')
@@ -13,7 +13,7 @@ export class TokensController {
    * Get current user's Tks balance
    */
   @Get('balance')
-  @UseGuards(ClerkAuthGuard)
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get Tks balance' })
   async getBalance(@CurrentUser('clerkId') clerkId: string) {
@@ -24,7 +24,7 @@ export class TokensController {
    * Get transaction history
    */
   @Get('transactions')
-  @UseGuards(ClerkAuthGuard)
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get Tks transaction history' })
   async getTransactions(@CurrentUser('clerkId') clerkId: string) {
@@ -35,7 +35,7 @@ export class TokensController {
    * Claim daily login reward
    */
   @Post('daily-reward')
-  @UseGuards(ClerkAuthGuard)
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Claim daily login reward (+2 Tks)' })
   async claimDailyReward(@CurrentUser('clerkId') clerkId: string) {

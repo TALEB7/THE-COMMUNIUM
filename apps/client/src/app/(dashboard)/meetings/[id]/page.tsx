@@ -19,7 +19,7 @@ import {
   Check,
 } from 'lucide-react';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+const API_URL = process.env.NEXT_PUBLIC_WS_URL || 'http://localhost:4000';
 const ICE_SERVERS: RTCConfiguration = {
   iceServers: [
     { urls: 'stun:stun.l.google.com:19302' },
@@ -393,13 +393,13 @@ export default function MeetingRoomPage() {
               <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-2">
                 <button
                   onClick={toggleAudio}
-                  className={`p-2.5 rounded-full transition ${audioEnabled ? 'bg-gray-700 text-white' : 'bg-destructive/100 text-white'}`}
+                  className={`p-2.5 rounded-full transition ${audioEnabled ? 'bg-gray-700 text-white' : 'bg-destructive text-white'}`}
                 >
                   {audioEnabled ? <Mic className="h-5 w-5" /> : <MicOff className="h-5 w-5" />}
                 </button>
                 <button
                   onClick={toggleVideo}
-                  className={`p-2.5 rounded-full transition ${videoEnabled ? 'bg-gray-700 text-white' : 'bg-destructive/100 text-white'}`}
+                  className={`p-2.5 rounded-full transition ${videoEnabled ? 'bg-gray-700 text-white' : 'bg-destructive text-white'}`}
                 >
                   {videoEnabled ? <Video className="h-5 w-5" /> : <VideoOff className="h-5 w-5" />}
                 </button>
@@ -408,7 +408,7 @@ export default function MeetingRoomPage() {
 
             <button
               onClick={joinMeeting}
-              className="flex items-center gap-2 px-8 py-3 text-sm font-bold bg-[#c9a730] text-white rounded-xl hover:bg-[#b8962c] transition shadow-lg"
+              className="flex items-center gap-2 px-8 py-3 text-sm font-bold bg-[#C8102E] text-white rounded-xl hover:bg-[#A60D25] transition shadow-lg"
             >
               Rejoindre maintenant
             </button>
@@ -463,7 +463,7 @@ export default function MeetingRoomPage() {
               Vous {isHost && '(Hôte)'}
             </span>
             {!audioEnabled && (
-              <span className="p-1 bg-destructive/100 rounded-full">
+              <span className="p-1 bg-destructive rounded-full">
                 <MicOff className="h-3 w-3 text-white" />
               </span>
             )}
@@ -497,7 +497,7 @@ export default function MeetingRoomPage() {
                 {p.displayName}
               </span>
               {!p.audioEnabled && (
-                <span className="p-1 bg-destructive/100 rounded-full">
+                <span className="p-1 bg-destructive rounded-full">
                   <MicOff className="h-3 w-3 text-white" />
                 </span>
               )}
@@ -510,7 +510,7 @@ export default function MeetingRoomPage() {
       <div className="flex items-center justify-center gap-3 px-4 py-4 bg-gray-900 rounded-b-xl">
         <button
           onClick={toggleAudio}
-          className={`p-3 rounded-full transition ${audioEnabled ? 'bg-gray-700 text-white hover:bg-gray-600' : 'bg-destructive/100 text-white hover:bg-red-600'}`}
+          className={`p-3 rounded-full transition ${audioEnabled ? 'bg-gray-700 text-white hover:bg-gray-600' : 'bg-destructive text-white hover:bg-red-600'}`}
           title={audioEnabled ? 'Couper le micro' : 'Activer le micro'}
         >
           {audioEnabled ? <Mic className="h-5 w-5" /> : <MicOff className="h-5 w-5" />}
@@ -518,7 +518,7 @@ export default function MeetingRoomPage() {
 
         <button
           onClick={toggleVideo}
-          className={`p-3 rounded-full transition ${videoEnabled ? 'bg-gray-700 text-white hover:bg-gray-600' : 'bg-destructive/100 text-white hover:bg-red-600'}`}
+          className={`p-3 rounded-full transition ${videoEnabled ? 'bg-gray-700 text-white hover:bg-gray-600' : 'bg-destructive text-white hover:bg-red-600'}`}
           title={videoEnabled ? 'Couper la caméra' : 'Activer la caméra'}
         >
           {videoEnabled ? <Video className="h-5 w-5" /> : <VideoOff className="h-5 w-5" />}
@@ -526,7 +526,7 @@ export default function MeetingRoomPage() {
 
         <button
           onClick={toggleScreenShare}
-          className={`p-3 rounded-full transition ${screenSharing ? 'bg-blue-500/100 text-white hover:bg-blue-600' : 'bg-gray-700 text-white hover:bg-gray-600'}`}
+          className={`p-3 rounded-full transition ${screenSharing ? 'bg-blue-500 text-white hover:bg-blue-600' : 'bg-gray-700 text-white hover:bg-gray-600'}`}
           title="Partager l'écran"
         >
           <Monitor className="h-5 w-5" />
@@ -534,7 +534,7 @@ export default function MeetingRoomPage() {
 
         <button
           onClick={leaveMeeting}
-          className="px-5 py-3 rounded-full bg-destructive/100 text-white hover:bg-red-600 transition"
+          className="px-5 py-3 rounded-full bg-destructive text-white hover:bg-red-600 transition"
           title="Quitter"
         >
           <PhoneOff className="h-5 w-5" />
