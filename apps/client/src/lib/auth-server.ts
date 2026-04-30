@@ -1,7 +1,7 @@
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth-options";
 
-// Clerk's auth() server-side wrapper
+
 export async function auth() {
   const session = await getServerSession(authOptions);
   
@@ -12,7 +12,7 @@ export async function auth() {
   };
 }
 
-// Clerk's currentUser() server-side wrapper
+
 export async function currentUser() {
   const session = await getServerSession(authOptions);
   

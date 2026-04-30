@@ -14,7 +14,7 @@ export default function ProfilePage() {
   const { t } = useT();
   const { data: session } = useSession();
   const user = session?.user as any;
-// ... (remove clerkUser block)
+
 
   const { data: profile, isLoading } = useQuery({
     queryKey: ['profile'],

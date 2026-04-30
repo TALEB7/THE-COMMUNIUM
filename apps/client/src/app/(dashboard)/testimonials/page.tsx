@@ -60,7 +60,7 @@ export default function TestimonialsPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    submitMutation.mutate({ clerkId: userId, content, rating, role, company });
+    submitMutation.mutate({ content, rating, role, company });
   };
 
   return (

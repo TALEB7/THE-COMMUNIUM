@@ -28,8 +28,8 @@ export class PaymentsController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get current membership' })
-  async getMembership(@CurrentUser('clerkId') clerkId: string) {
-    return this.paymentsService.getMembership(clerkId);
+  async getMembership(@CurrentUser('id') userId: string) {
+    return this.paymentsService.getMembership(userId);
   }
 
   /**
@@ -40,10 +40,10 @@ export class PaymentsController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Subscribe to a plan' })
   async subscribe(
-    @CurrentUser('clerkId') clerkId: string,
+    @CurrentUser('id') userId: string,
     @Body() dto: CreateSubscriptionDto,
   ) {
-    return this.paymentsService.createSubscription(clerkId, dto);
+    return this.paymentsService.createSubscription(userId, dto);
   }
 
   /**
@@ -76,7 +76,7 @@ export class PaymentsController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get payment history' })
-  async getPaymentHistory(@CurrentUser('clerkId') clerkId: string) {
-    return this.paymentsService.getPaymentHistory(clerkId);
+  async getPaymentHistory(@CurrentUser('id') userId: string) {
+    return this.paymentsService.getPaymentHistory(userId);
   }
 }

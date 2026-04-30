@@ -28,7 +28,7 @@ export default function TokensPage() {
   // Wallet balance
   const { data: balance, isLoading: balanceLoading } = useQuery({
     queryKey: ['token-balance', userId],
-    queryFn: () => api.get(`/tokens/balance?clerkId=${userId}`).then((r) => r.data),
+    queryFn: () => api.get('/tokens/balance').then((r) => r.data),
     enabled: !!userId,
   });
 
@@ -36,13 +36,13 @@ export default function TokensPage() {
   const { data: transactions, isLoading: txLoading } = useQuery({
     queryKey: ['token-transactions', userId, txPage],
     queryFn: () =>
-      api.get(`/tokens/transactions?clerkId=${userId}&page=${txPage}&limit=15`).then((r) => r.data),
+      api.get(`/tokens/transactions?page=${txPage}&limit=15`).then((r) => r.data),
     enabled: !!userId,
   });
 
   // Daily reward
   const dailyMutation = useMutation({
-    mutationFn: () => api.post('/tokens/daily-reward', { clerkId: userId }),
+    mutationFn: () => api.post('/tokens/daily-reward'),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['token-balance'] });
       queryClient.invalidateQueries({ queryKey: ['token-transactions'] });

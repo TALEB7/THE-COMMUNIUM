@@ -29,23 +29,23 @@ export class TestimonialsController {
     return this.testimonialsService.create(body);
   }
 
-  @Get('user/:clerkId')
+  @Get('user/:userId')
   @ApiOperation({ summary: 'Get user testimonials' })
-  getUserTestimonials(@Param('clerkId') clerkId: string) {
-    return this.testimonialsService.getUserTestimonials(clerkId);
+  getUserTestimonials(@Param('userId') userId: string) {
+    return this.testimonialsService.getUserTestimonials(userId);
   }
 
   @Patch(':id')
   @ApiOperation({ summary: 'Update testimonial' })
-  update(@Param('id') id: string, @Body() body: { clerkId: string; content?: string; rating?: number; role?: string; company?: string }) {
-    const { clerkId, ...data } = body;
-    return this.testimonialsService.update(id, clerkId, data);
+  update(@Param('id') id: string, @Body() body: { userId: string; content?: string; rating?: number; role?: string; company?: string }) {
+    const { userId, ...data } = body;
+    return this.testimonialsService.update(id, userId, data);
   }
 
   @Delete(':id')
   @ApiOperation({ summary: 'Delete testimonial' })
-  remove(@Param('id') id: string, @Query('clerkId') clerkId: string) {
-    return this.testimonialsService.remove(id, clerkId);
+  remove(@Param('id') id: string, @Query('userId') userId: string) {
+    return this.testimonialsService.remove(id, userId);
   }
 
   // ── Admin ──

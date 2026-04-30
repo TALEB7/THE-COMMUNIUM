@@ -5,7 +5,7 @@ import Link from "next/link";
 import React from "react";
 import { getMediaUrl } from "@/lib/media-url";
 
-// Clerk's useUser hook wrapper
+
 export function useUser() {
   const { data: session, status } = useSession();
   const isLoaded = status !== "loading";
@@ -23,7 +23,7 @@ export function useUser() {
   return { isLoaded, isSignedIn: !!user, user };
 }
 
-// Clerk's useAuth hook wrapper
+
 export function useAuth() {
   const { data: session, status } = useSession();
   return {

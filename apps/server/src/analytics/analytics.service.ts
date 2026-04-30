@@ -315,9 +315,9 @@ export class AnalyticsService {
   /**
    * User dashboard stats — personalised overview for the logged-in user
    */
-  async getUserDashboard(clerkId: string) {
+  async getUserDashboard(userId: string) {
     const user = await this.prisma.user.findUnique({
-      where: { OR: [{ id: clerkId }, { clerkId }] },
+      where: { id: userId },
       include: {
         tksWallet: true,
         membership: true,

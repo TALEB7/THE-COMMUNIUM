@@ -17,8 +17,8 @@ export class AuctionsService {
 
   // ==================== Create Auction ====================
 
-  async createAuction(clerkId: string, dto: CreateAuctionDto) {
-    const user = await this.findUserByClerkId(clerkId);
+  async createAuction(userId: string, dto: CreateAuctionDto) {
+    const user = await this.findUser(userId);
 
     // Verify listing ownership
     const listing = await this.prisma.listing.findUnique({
@@ -80,8 +80,8 @@ export class AuctionsService {
 
   // ==================== Place Bid ====================
 
-  async placeBid(clerkId: string, auctionId: string, dto: PlaceBidDto) {
-    const user = await this.findUserByClerkId(clerkId);
+  async placeBid(userId: string, auctionId: string, dto: PlaceBidDto) {
+    const user = await this.findUser(userId);
 
     const auction = await this.prisma.auction.findUnique({
       where: { id: auctionId },
@@ -277,8 +277,8 @@ export class AuctionsService {
     };
   }
 
-  async getMyAuctions(clerkId: string) {
-    const user = await this.findUserByClerkId(clerkId);
+  async getMyAuctions(userId: string) {
+    const user = await this.findUser(userId);
 
     return this.prisma.auction.findMany({
       where: { sellerId: user.id },
@@ -290,8 +290,8 @@ export class AuctionsService {
     });
   }
 
-  async getMyBids(clerkId: string) {
-    const user = await this.findUserByClerkId(clerkId);
+  async getMyBids(userId: string) {
+    const user = await this.findUser(userId);
 
     return this.prisma.bid.findMany({
       where: { bidderId: user.id },
@@ -310,8 +310,8 @@ export class AuctionsService {
 
   // ==================== Cancel Auction ====================
 
-  async cancelAuction(clerkId: string, auctionId: string) {
-    const user = await this.findUserByClerkId(clerkId);
+  async cancelAuction(userId: string, auctionId: string) {
+    const user = await this.findUser(userId);
 
     const auction = await this.prisma.auction.findUnique({
       where: { id: auctionId },
@@ -337,9 +337,9 @@ export class AuctionsService {
 
   // ==================== Helpers ====================
 
-  private async findUserByClerkId(clerkId: string) {
+  private async findUser(userId: string) {
     const user = await this.prisma.user.findUnique({
-      where: { OR: [{ id: clerkId }, { clerkId }] },
+      where: { id: userId },
     });
     if (!user) throw new NotFoundException('User not found');
     return user;

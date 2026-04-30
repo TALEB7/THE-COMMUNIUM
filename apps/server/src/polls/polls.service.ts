@@ -72,7 +72,7 @@ export class PollsService {
           include: {
             _count: { select: { votes: true } },
             votes: userId
-              ? { where: { user: { OR: [{ id: userId }, { clerkId: userId }] } }, select: { id: true } }
+              ? { where: { userId }, select: { id: true } }
               : false,
           },
         },
@@ -102,7 +102,7 @@ export class PollsService {
     const option = poll.options.find((o: any) => o.id === optionId);
     if (!option) throw new Error('Invalid option');
 
-    const user = await this.prisma.user.findFirst({ where: { OR: [{ id: userId }, { clerkId: userId }] } });
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new Error('User not found');
 
     // Single choice: remove existing votes first

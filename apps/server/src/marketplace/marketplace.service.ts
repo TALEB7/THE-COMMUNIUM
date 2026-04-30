@@ -25,8 +25,8 @@ export class MarketplaceService {
 
   // ==================== Listings CRUD ====================
 
-  async createListing(clerkId: string, dto: CreateListingDto) {
-    const user = await this.findUserByClerkId(clerkId);
+  async createListing(userId: string, dto: CreateListingDto) {
+    const user = await this.findUser(userId);
 
     // Verify the category exists
     const category = await this.prisma.category.findUnique({
@@ -148,8 +148,8 @@ export class MarketplaceService {
     return sorted;
   }
 
-  async updateListing(clerkId: string, listingId: string, dto: UpdateListingDto) {
-    const user = await this.findUserByClerkId(clerkId);
+  async updateListing(userId: string, listingId: string, dto: UpdateListingDto) {
+    const user = await this.findUser(userId);
     const listing = await this.findListingOwnedBy(listingId, user.id);
 
     const updateData: any = { ...dto };
@@ -169,8 +169,8 @@ export class MarketplaceService {
     });
   }
 
-  async deleteListing(clerkId: string, listingId: string) {
-    const user = await this.findUserByClerkId(clerkId);
+  async deleteListing(userId: string, listingId: string) {
+    const user = await this.findUser(userId);
     await this.findListingOwnedBy(listingId, user.id);
 
     await this.prisma.listing.delete({ where: { id: listingId } });
@@ -340,8 +340,8 @@ export class MarketplaceService {
     return result;
   }
 
-  async getMyListings(clerkId: string, status?: string) {
-    const user = await this.findUserByClerkId(clerkId);
+  async getMyListings(userId: string, status?: string) {
+    const user = await this.findUser(userId);
 
     const where: any = { sellerId: user.id };
     if (status) where.status = status;
@@ -359,8 +359,8 @@ export class MarketplaceService {
 
   // ==================== Favorites ====================
 
-  async toggleFavorite(clerkId: string, listingId: string) {
-    const user = await this.findUserByClerkId(clerkId);
+  async toggleFavorite(userId: string, listingId: string) {
+    const user = await this.findUser(userId);
 
     const existing = await this.prisma.favoriteListing.findUnique({
       where: {
@@ -379,8 +379,8 @@ export class MarketplaceService {
     return { favorited: true };
   }
 
-  async getMyFavorites(clerkId: string) {
-    const user = await this.findUserByClerkId(clerkId);
+  async getMyFavorites(userId: string) {
+    const user = await this.findUser(userId);
 
     const favorites = await this.prisma.favoriteListing.findMany({
       where: { userId: user.id },
@@ -402,8 +402,8 @@ export class MarketplaceService {
 
   // ==================== Reviews ====================
 
-  async createReview(clerkId: string, listingId: string, dto: CreateReviewDto) {
-    const user = await this.findUserByClerkId(clerkId);
+  async createReview(userId: string, listingId: string, dto: CreateReviewDto) {
+    const user = await this.findUser(userId);
 
     const listing = await this.prisma.listing.findUnique({
       where: { id: listingId },
@@ -446,8 +446,8 @@ export class MarketplaceService {
 
   // ==================== Boost Listing ====================
 
-  async boostListing(clerkId: string, listingId: string) {
-    const user = await this.findUserByClerkId(clerkId);
+  async boostListing(userId: string, listingId: string) {
+    const user = await this.findUser(userId);
     const listing = await this.findListingOwnedBy(listingId, user.id);
 
     // Check Tks balance (costs 10 Tks)
@@ -661,11 +661,11 @@ export class MarketplaceService {
 
   // ==================== Helpers ====================
 
-  private async findUserByClerkId(clerkId: string) {
-    // JWT sub can be either the local user.id or the clerkId depending on auth method
+  private async findUser(userId: string) {
+    
     const user = await this.prisma.user.findFirst({
       where: {
-        OR: [{ clerkId }, { id: clerkId }],
+        id: userId,
       },
     });
     if (!user) throw new NotFoundException('User not found');

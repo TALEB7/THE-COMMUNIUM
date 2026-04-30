@@ -80,7 +80,7 @@ export class AnnouncementsService {
   // ── Mark as read ──
 
   async markRead(announcementId: string, userId: string) {
-    const user = await this.prisma.user.findFirst({ where: { OR: [{ id: userId }, { clerkId: userId }] } });
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) return;
 
     return this.prisma.announcementRead.upsert({
@@ -91,7 +91,7 @@ export class AnnouncementsService {
   }
 
   async getUnreadCount(userId: string) {
-    const user = await this.prisma.user.findFirst({ where: { OR: [{ id: userId }, { clerkId: userId }] } });
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) return 0;
 
     const now = new Date();

@@ -30,9 +30,9 @@ export class PaymentsService {
   /**
    * Get current membership for user
    */
-  async getMembership(clerkId: string) {
+  async getMembership(userId: string) {
     const user = await this.prisma.user.findUnique({
-      where: { OR: [{ id: clerkId }, { clerkId }] },
+      where: { id: userId },
       include: { membership: true },
     });
 
@@ -54,8 +54,8 @@ export class PaymentsService {
   /**
    * Create a subscription — returns checkout URL
    */
-  async createSubscription(clerkId: string, dto: CreateSubscriptionDto) {
-    const user = await this.prisma.user.findFirst({ where: { OR: [{ id: clerkId }, { clerkId }] } });
+  async createSubscription(userId: string, dto: CreateSubscriptionDto) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new NotFoundException('User not found');
 
     const plan = PLAN_PRICES[dto.planId];
@@ -264,8 +264,8 @@ export class PaymentsService {
   /**
    * Get payment history for user
    */
-  async getPaymentHistory(clerkId: string) {
-    const user = await this.prisma.user.findFirst({ where: { OR: [{ id: clerkId }, { clerkId }] } });
+  async getPaymentHistory(userId: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new NotFoundException('User not found');
 
     const payments = await this.prisma.payment.findMany({

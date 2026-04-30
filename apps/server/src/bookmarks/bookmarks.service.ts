@@ -8,7 +8,7 @@ export class BookmarksService {
   // ── Toggle Bookmark ──
 
   async toggleBookmark(userId: string, targetType: string, targetId: string, note?: string) {
-    const user = await this.prisma.user.findFirst({ where: { OR: [{ id: userId }, { clerkId: userId }] } });
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new Error('User not found');
 
     const existing = await this.prisma.bookmark.findUnique({
@@ -29,7 +29,7 @@ export class BookmarksService {
   // ── Get user bookmarks ──
 
   async getUserBookmarks(userId: string, targetType?: string, page = 1, limit = 20) {
-    const user = await this.prisma.user.findFirst({ where: { OR: [{ id: userId }, { clerkId: userId }] } });
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) return { bookmarks: [], total: 0 };
 
     const where: any = { userId: user.id };
@@ -93,7 +93,7 @@ export class BookmarksService {
   // ── Check if bookmarked ──
 
   async isBookmarked(userId: string, targetType: string, targetId: string) {
-    const user = await this.prisma.user.findFirst({ where: { OR: [{ id: userId }, { clerkId: userId }] } });
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) return false;
 
     const bm = await this.prisma.bookmark.findUnique({
@@ -105,7 +105,7 @@ export class BookmarksService {
   // ── Update note ──
 
   async updateNote(userId: string, bookmarkId: string, note: string) {
-    const user = await this.prisma.user.findFirst({ where: { OR: [{ id: userId }, { clerkId: userId }] } });
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new Error('User not found');
 
     return this.prisma.bookmark.update({
@@ -117,7 +117,7 @@ export class BookmarksService {
   // ── Stats ──
 
   async getBookmarkStats(userId: string) {
-    const user = await this.prisma.user.findFirst({ where: { OR: [{ id: userId }, { clerkId: userId }] } });
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) return {};
 
     const counts = await this.prisma.bookmark.groupBy({

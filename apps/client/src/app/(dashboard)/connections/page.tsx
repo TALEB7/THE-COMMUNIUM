@@ -281,7 +281,7 @@ export default function ConnectionsPage() {
                 <CardContent className="p-4 flex items-center justify-between">
                   {renderUser(user)}
                   <button
-                    onClick={() => sendMutation.mutate(user.clerkId)}
+                    onClick={() => sendMutation.mutate(user.id)}
                     disabled={sendMutation.isPending}
                     className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-primary text-white rounded-lg hover:brightness-110 disabled:opacity-50 transition"
                   >

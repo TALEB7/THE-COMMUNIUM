@@ -5,7 +5,6 @@ export class OnboardingDto {
   @ApiProperty({ description: 'User ID' })
   @IsString()
   @IsNotEmpty()
-  clerkId: string;
 
   @ApiProperty({ enum: ['personal', 'business', 'company_creation'] })
   @IsEnum(['personal', 'business', 'company_creation'])

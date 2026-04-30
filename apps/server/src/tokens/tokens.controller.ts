@@ -16,8 +16,8 @@ export class TokensController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get Tks balance' })
-  async getBalance(@CurrentUser('clerkId') clerkId: string) {
-    return this.tokensService.getBalance(clerkId);
+  async getBalance(@CurrentUser('id') userId: string) {
+    return this.tokensService.getBalance(userId);
   }
 
   /**
@@ -27,8 +27,8 @@ export class TokensController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get Tks transaction history' })
-  async getTransactions(@CurrentUser('clerkId') clerkId: string) {
-    return this.tokensService.getTransactions(clerkId);
+  async getTransactions(@CurrentUser('id') userId: string) {
+    return this.tokensService.getTransactions(userId);
   }
 
   /**
@@ -38,7 +38,7 @@ export class TokensController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Claim daily login reward (+2 Tks)' })
-  async claimDailyReward(@CurrentUser('clerkId') clerkId: string) {
-    return this.tokensService.claimDailyReward(clerkId);
+  async claimDailyReward(@CurrentUser('id') userId: string) {
+    return this.tokensService.claimDailyReward(userId);
   }
 }

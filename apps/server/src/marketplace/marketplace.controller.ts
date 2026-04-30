@@ -101,8 +101,8 @@ export class MarketplaceController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create a new listing' })
-  createListing(@CurrentUser('clerkId') clerkId: string, @Body() dto: CreateListingDto) {
-    return this.marketplaceService.createListing(clerkId, dto);
+  createListing(@CurrentUser('id') userId: string, @Body() dto: CreateListingDto) {
+    return this.marketplaceService.createListing(userId, dto);
   }
 
   @Put('listings/:id')
@@ -110,11 +110,11 @@ export class MarketplaceController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update a listing' })
   updateListing(
-    @CurrentUser('clerkId') clerkId: string,
+    @CurrentUser('id') userId: string,
     @Param('id') id: string,
     @Body() dto: UpdateListingDto,
   ) {
-    return this.marketplaceService.updateListing(clerkId, id, dto);
+    return this.marketplaceService.updateListing(userId, id, dto);
   }
 
   @Delete('listings/:id')
@@ -122,16 +122,16 @@ export class MarketplaceController {
   @ApiBearerAuth()
   @HttpCode(200)
   @ApiOperation({ summary: 'Delete a listing' })
-  deleteListing(@CurrentUser('clerkId') clerkId: string, @Param('id') id: string) {
-    return this.marketplaceService.deleteListing(clerkId, id);
+  deleteListing(@CurrentUser('id') userId: string, @Param('id') id: string) {
+    return this.marketplaceService.deleteListing(userId, id);
   }
 
   @Get('my-listings')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get current user listings' })
-  getMyListings(@CurrentUser('clerkId') clerkId: string, @Query('status') status?: string) {
-    return this.marketplaceService.getMyListings(clerkId, status);
+  getMyListings(@CurrentUser('id') userId: string, @Query('status') status?: string) {
+    return this.marketplaceService.getMyListings(userId, status);
   }
 
   @Post('listings/:id/favorite')
@@ -139,16 +139,16 @@ export class MarketplaceController {
   @ApiBearerAuth()
   @HttpCode(200)
   @ApiOperation({ summary: 'Toggle favorite on a listing' })
-  toggleFavorite(@CurrentUser('clerkId') clerkId: string, @Param('id') id: string) {
-    return this.marketplaceService.toggleFavorite(clerkId, id);
+  toggleFavorite(@CurrentUser('id') userId: string, @Param('id') id: string) {
+    return this.marketplaceService.toggleFavorite(userId, id);
   }
 
   @Get('favorites')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get current user favorite listings' })
-  getMyFavorites(@CurrentUser('clerkId') clerkId: string) {
-    return this.marketplaceService.getMyFavorites(clerkId);
+  getMyFavorites(@CurrentUser('id') userId: string) {
+    return this.marketplaceService.getMyFavorites(userId);
   }
 
   @Post('listings/:id/reviews')
@@ -156,18 +156,18 @@ export class MarketplaceController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Review a listing' })
   createReview(
-    @CurrentUser('clerkId') clerkId: string,
+    @CurrentUser('id') userId: string,
     @Param('id') id: string,
     @Body() dto: CreateReviewDto,
   ) {
-    return this.marketplaceService.createReview(clerkId, id, dto);
+    return this.marketplaceService.createReview(userId, id, dto);
   }
 
   @Post('listings/:id/boost')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Boost a listing with Tks tokens (10 Tks for 7 days)' })
-  boostListing(@CurrentUser('clerkId') clerkId: string, @Param('id') id: string) {
-    return this.marketplaceService.boostListing(clerkId, id);
+  boostListing(@CurrentUser('id') userId: string, @Param('id') id: string) {
+    return this.marketplaceService.boostListing(userId, id);
   }
 }

@@ -13,7 +13,7 @@ export class AdminService {
       where: {
         OR: [
           { id: userId },
-          { clerkId: userId },
+          { id: userId },
         ],
       },
     });

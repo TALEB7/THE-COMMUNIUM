@@ -94,14 +94,8 @@ export class AuthService {
    * Complete onboarding — set account type and detailed profile info
    */
   async onboardUser(dto: OnboardingDto) {
-    const user = await this.prisma.user.findFirst({
-      where: {
-        OR: [
-          { clerkId: dto.clerkId },
-          { id: dto.clerkId },
-          { email: dto.email },
-        ],
-      },
+    const user = await this.prisma.user.findUnique({
+      where: { email: dto.email },
     });
 
     if (!user) {

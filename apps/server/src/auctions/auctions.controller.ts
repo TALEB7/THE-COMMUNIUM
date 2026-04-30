@@ -51,8 +51,8 @@ export class AuctionsController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create a new auction for a listing' })
-  createAuction(@CurrentUser('clerkId') clerkId: string, @Body() dto: CreateAuctionDto) {
-    return this.auctionsService.createAuction(clerkId, dto);
+  createAuction(@CurrentUser('id') userId: string, @Body() dto: CreateAuctionDto) {
+    return this.auctionsService.createAuction(userId, dto);
   }
 
   @Post(':id/bid')
@@ -61,27 +61,27 @@ export class AuctionsController {
   @HttpCode(200)
   @ApiOperation({ summary: 'Place a bid on an auction' })
   placeBid(
-    @CurrentUser('clerkId') clerkId: string,
+    @CurrentUser('id') userId: string,
     @Param('id') id: string,
     @Body() dto: PlaceBidDto,
   ) {
-    return this.auctionsService.placeBid(clerkId, id, dto);
+    return this.auctionsService.placeBid(userId, id, dto);
   }
 
   @Get('my/auctions')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get my auctions (as seller)' })
-  getMyAuctions(@CurrentUser('clerkId') clerkId: string) {
-    return this.auctionsService.getMyAuctions(clerkId);
+  getMyAuctions(@CurrentUser('id') userId: string) {
+    return this.auctionsService.getMyAuctions(userId);
   }
 
   @Get('my/bids')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get my bids (as bidder)' })
-  getMyBids(@CurrentUser('clerkId') clerkId: string) {
-    return this.auctionsService.getMyBids(clerkId);
+  getMyBids(@CurrentUser('id') userId: string) {
+    return this.auctionsService.getMyBids(userId);
   }
 
   @Post(':id/cancel')
@@ -89,7 +89,7 @@ export class AuctionsController {
   @ApiBearerAuth()
   @HttpCode(200)
   @ApiOperation({ summary: 'Cancel an auction (only if no bids)' })
-  cancelAuction(@CurrentUser('clerkId') clerkId: string, @Param('id') id: string) {
-    return this.auctionsService.cancelAuction(clerkId, id);
+  cancelAuction(@CurrentUser('id') userId: string, @Param('id') id: string) {
+    return this.auctionsService.cancelAuction(userId, id);
   }
 }

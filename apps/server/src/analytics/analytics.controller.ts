@@ -5,9 +5,9 @@ import { AnalyticsService } from './analytics.service';
 export class AnalyticsController {
   constructor(private readonly analyticsService: AnalyticsService) {}
 
-  @Get('dashboard/:clerkId')
-  async getUserDashboard(@Param('clerkId') clerkId: string) {
-    return this.analyticsService.getUserDashboard(clerkId);
+  @Get('dashboard/:userId')
+  async getUserDashboard(@Param('userId') userId: string) {
+    return this.analyticsService.getUserDashboard(userId);
   }
 
   @Post('track')

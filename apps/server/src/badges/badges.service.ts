@@ -56,7 +56,6 @@ export class BadgesService {
       include: {
         users: {
           include: {
-            user: { select: { id: true, clerkId: true, firstName: true, lastName: true, avatarUrl: true } },
           },
           orderBy: { awardedAt: 'desc' },
           take: 20,
@@ -70,14 +69,14 @@ export class BadgesService {
 
   async getUserBadges(userId: string) {
     return this.prisma.userBadge.findMany({
-      where: { user: { OR: [{ id: userId }, { clerkId: userId }] } },
+      where: { user: { id: userId } },
       include: { badge: true },
       orderBy: { awardedAt: 'desc' },
     });
   }
 
   async awardBadge(userId: string, badgeId: string, awardedBy?: string) {
-    const user = await this.prisma.user.findFirst({ where: { OR: [{ id: userId }, { clerkId: userId }] } });
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new Error('User not found');
 
     return this.prisma.userBadge.upsert({
@@ -89,7 +88,7 @@ export class BadgesService {
   }
 
   async revokeBadge(userId: string, badgeId: string) {
-    const user = await this.prisma.user.findFirst({ where: { OR: [{ id: userId }, { clerkId: userId }] } });
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) return;
 
     return this.prisma.userBadge.deleteMany({
@@ -104,7 +103,6 @@ export class BadgesService {
       where: { isActive: true },
       select: {
         id: true,
-        clerkId: true,
         firstName: true,
         lastName: true,
         avatarUrl: true,
@@ -125,7 +123,7 @@ export class BadgesService {
       rank: i + 1,
       user: {
         id: u.id,
-        clerkId: u.clerkId,
+        
         firstName: u.firstName,
         lastName: u.lastName,
         avatarUrl: u.avatarUrl,
@@ -144,7 +142,7 @@ export class BadgesService {
 
   async checkAndAwardBadges(userId: string) {
     const user = await this.prisma.user.findFirst({
-      where: { OR: [{ id: userId }, { clerkId: userId }] },
+      where: { id: userId },
       include: {
         _count: {
           select: {

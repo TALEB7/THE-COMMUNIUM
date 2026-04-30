@@ -93,7 +93,6 @@ export default function OnboardingPage() {
     setError(null);
     try {
       await api.post("/auth/onboarding", {
-        clerkId: user?.id,
         email: (user as any).email,
         firstName: user?.firstName,
         lastName: user?.lastName,
