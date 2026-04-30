@@ -11,8 +11,8 @@ export class TokensService {
    * Get Tks balance for user
    */
   async getBalance(clerkId: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { clerkId },
+    const user = await this.prisma.user.findFirst({
+      where: { OR: [{ id: clerkId }, { clerkId }] },
       include: { tksWallet: true },
     });
 
@@ -29,7 +29,7 @@ export class TokensService {
    * Get transaction history
    */
   async getTransactions(clerkId: string) {
-    const user = await this.prisma.user.findUnique({ where: { clerkId } });
+    const user = await this.prisma.user.findFirst({ where: { OR: [{ id: clerkId }, { clerkId }] } });
     if (!user) throw new NotFoundException('User not found');
 
     const transactions = await this.prisma.tksTransaction.findMany({
@@ -105,7 +105,7 @@ export class TokensService {
    * Claim daily login reward (+2 Tks)
    */
   async claimDailyReward(clerkId: string) {
-    const user = await this.prisma.user.findUnique({ where: { clerkId } });
+    const user = await this.prisma.user.findFirst({ where: { OR: [{ id: clerkId }, { clerkId }] } });
     if (!user) throw new NotFoundException('User not found');
 
     // Check if already claimed today

@@ -339,7 +339,7 @@ export class AuctionsService {
 
   private async findUserByClerkId(clerkId: string) {
     const user = await this.prisma.user.findUnique({
-      where: { clerkId },
+      where: { OR: [{ id: clerkId }, { clerkId }] },
     });
     if (!user) throw new NotFoundException('User not found');
     return user;

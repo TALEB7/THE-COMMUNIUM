@@ -42,7 +42,7 @@ export class TestimonialsService {
     role?: string;
     company?: string;
   }) {
-    const user = await this.prisma.user.findUnique({ where: { clerkId: data.authorId } });
+    const user = await this.prisma.user.findFirst({ where: { OR: [{ id: data.authorId }, { clerkId: data.authorId }] } });
     if (!user) throw new NotFoundException('Utilisateur non trouvé');
 
     return this.prisma.testimonial.create({
@@ -57,7 +57,7 @@ export class TestimonialsService {
   }
 
   async getUserTestimonials(clerkId: string) {
-    const user = await this.prisma.user.findUnique({ where: { clerkId } });
+    const user = await this.prisma.user.findFirst({ where: { OR: [{ id: clerkId }, { clerkId }] } });
     if (!user) return [];
 
     return this.prisma.testimonial.findMany({
@@ -67,7 +67,7 @@ export class TestimonialsService {
   }
 
   async update(id: string, clerkId: string, data: { content?: string; rating?: number; role?: string; company?: string }) {
-    const user = await this.prisma.user.findUnique({ where: { clerkId } });
+    const user = await this.prisma.user.findFirst({ where: { OR: [{ id: clerkId }, { clerkId }] } });
     const testimonial = await this.prisma.testimonial.findUnique({ where: { id } });
     if (!testimonial) throw new NotFoundException('Témoignage non trouvé');
     if (!user || testimonial.authorId !== user.id) throw new ForbiddenException('Non autorisé');
@@ -79,7 +79,7 @@ export class TestimonialsService {
   }
 
   async remove(id: string, clerkId: string) {
-    const user = await this.prisma.user.findUnique({ where: { clerkId } });
+    const user = await this.prisma.user.findFirst({ where: { OR: [{ id: clerkId }, { clerkId }] } });
     const testimonial = await this.prisma.testimonial.findUnique({ where: { id } });
     if (!testimonial) throw new NotFoundException('Témoignage non trouvé');
     if (!user || (testimonial.authorId !== user.id && user.role !== 'ADMIN')) {

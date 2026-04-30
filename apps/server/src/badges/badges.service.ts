@@ -70,14 +70,14 @@ export class BadgesService {
 
   async getUserBadges(userId: string) {
     return this.prisma.userBadge.findMany({
-      where: { user: { clerkId: userId } },
+      where: { user: { OR: [{ id: userId }, { clerkId: userId }] } },
       include: { badge: true },
       orderBy: { awardedAt: 'desc' },
     });
   }
 
   async awardBadge(userId: string, badgeId: string, awardedBy?: string) {
-    const user = await this.prisma.user.findUnique({ where: { clerkId: userId } });
+    const user = await this.prisma.user.findFirst({ where: { OR: [{ id: userId }, { clerkId: userId }] } });
     if (!user) throw new Error('User not found');
 
     return this.prisma.userBadge.upsert({
@@ -89,7 +89,7 @@ export class BadgesService {
   }
 
   async revokeBadge(userId: string, badgeId: string) {
-    const user = await this.prisma.user.findUnique({ where: { clerkId: userId } });
+    const user = await this.prisma.user.findFirst({ where: { OR: [{ id: userId }, { clerkId: userId }] } });
     if (!user) return;
 
     return this.prisma.userBadge.deleteMany({
@@ -143,8 +143,8 @@ export class BadgesService {
   // ── Auto-check criteria (called after certain actions) ──
 
   async checkAndAwardBadges(userId: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { clerkId: userId },
+    const user = await this.prisma.user.findFirst({
+      where: { OR: [{ id: userId }, { clerkId: userId }] },
       include: {
         _count: {
           select: {
