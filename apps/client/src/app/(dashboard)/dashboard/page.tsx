@@ -7,21 +7,10 @@ import { useT } from '@/lib/i18n';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
-  Users,
-  ShoppingBag,
-  Coins,
-  TrendingUp,
-  MessageCircle,
-  Bell,
-  Award,
-  GraduationCap,
-  Calendar,
-  Users2,
-  Bookmark,
-  MessagesSquare,
-  Activity,
-  CreditCard,
-  ArrowRight,
+  Users, ShoppingBag, Coins, TrendingUp,
+  MessageCircle, Bell, Award, GraduationCap,
+  Calendar, Users2, Bookmark, MessagesSquare,
+  Activity, CreditCard, ArrowRight,
 } from 'lucide-react';
 import { DashboardSkeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
@@ -39,11 +28,11 @@ export default function DashboardPage() {
 
   if (isLoading) return <DashboardSkeleton />;
 
-  const stats = dashboard?.stats || {};
-  const tokens = dashboard?.tokens || {};
-  const membership = dashboard?.membership;
-  const notifications = dashboard?.notifications || {};
-  const messages = dashboard?.messages || {};
+  const stats        = dashboard?.stats        || {};
+  const tokens       = dashboard?.tokens       || {};
+  const membership   = dashboard?.membership;
+  const notifications= dashboard?.notifications|| {};
+  const messages     = dashboard?.messages     || {};
 
   return (
     <div className="space-y-6">
@@ -56,17 +45,16 @@ export default function DashboardPage() {
         <div className="h-0.5 bg-gradient-to-r from-[#C8102E] via-[#E8233E] to-transparent max-w-xs mt-2" />
       </div>
 
-      {/* Top Row — Key Metrics */}
+      {/* Key Metrics */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <StatCard icon={<Users className="h-4 w-4 text-primary" />} label={t.dashboard.connectionsLabel} value={stats.connections ?? 0} />
-        <StatCard icon={<ShoppingBag className="h-4 w-4 text-primary" />} label={t.dashboard.listingsLabel} value={stats.listings ?? 0} />
-        <StatCard icon={<Coins className="h-4 w-4 text-primary" />} label={t.dashboard.tksBalance} value={tokens.balance ?? 0} sub={t.dashboard.tokensAvailable} />
-        <StatCard icon={<TrendingUp className="h-4 w-4 text-primary" />} label={t.dashboard.profileViews} value={dashboard?.user?.profileViews ?? 0} sub={t.dashboard.total} />
+        <StatCard icon={<Users className="h-4 w-4 text-primary" />}       label={t.dashboard.connectionsLabel} value={stats.connections ?? 0} />
+        <StatCard icon={<ShoppingBag className="h-4 w-4 text-primary" />} label={t.dashboard.listingsLabel}    value={stats.listings ?? 0} />
+        <StatCard icon={<Coins className="h-4 w-4 text-primary" />}       label={t.dashboard.tksBalance}       value={tokens.balance ?? 0} sub={t.dashboard.tokensAvailable} />
+        <StatCard icon={<TrendingUp className="h-4 w-4 text-primary" />}  label={t.dashboard.profileViews}     value={dashboard?.user?.profileViews ?? 0} sub={t.dashboard.total} />
       </div>
 
-      {/* Second Row — Notifications + Messages + Membership */}
+      {/* Notifications + Messages + Membership */}
       <div className="grid gap-4 md:grid-cols-3">
-        {/* Notifications */}
         <Card className="border-border">
           <CardContent className="pt-5 flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -84,7 +72,6 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* Messages */}
         <Card className="border-border">
           <CardContent className="pt-5 flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -102,7 +89,6 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* Membership */}
         <Card className="border-border">
           <CardContent className="pt-5 flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -112,9 +98,9 @@ export default function DashboardPage() {
               <div>
                 <p className="text-sm font-semibold text-foreground">{t.dashboard.membershipLabel}</p>
                 <p className="text-xs text-muted-foreground">
-                  {membership?.plan ? (
-                    <Badge variant="outline" className="text-[10px] border-primary text-primary">{membership.plan}</Badge>
-                  ) : t.common.free}
+                  {membership?.plan
+                    ? <Badge variant="outline" className="text-[10px] border-primary text-primary">{membership.plan}</Badge>
+                    : t.common.free}
                 </p>
               </div>
             </div>
@@ -125,32 +111,32 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      {/* Third Row — Activity Stats */}
+      {/* Activity mini stats */}
       <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
-        <MiniStat icon={MessagesSquare} label={t.dashboard.forumPosts} value={stats.forumPosts ?? 0} />
-        <MiniStat icon={Award} label={t.dashboard.badgesLabel} value={stats.badges ?? 0} />
-        <MiniStat icon={GraduationCap} label={t.dashboard.mentorshipLabel} value={stats.mentorshipSessions ?? 0} />
-        <MiniStat icon={Calendar} label={t.dashboard.eventsLabel} value={stats.events ?? 0} />
-        <MiniStat icon={Users2} label={t.dashboard.groupsLabel} value={stats.groups ?? 0} />
-        <MiniStat icon={Bookmark} label={t.dashboard.favoritesLabel} value={stats.bookmarks ?? 0} />
+        <MiniStat icon={MessagesSquare} label={t.dashboard.forumPosts}       value={stats.forumPosts ?? 0} />
+        <MiniStat icon={Award}          label={t.dashboard.badgesLabel}       value={stats.badges ?? 0} />
+        <MiniStat icon={GraduationCap}  label={t.dashboard.mentorshipLabel}   value={stats.mentorshipSessions ?? 0} />
+        <MiniStat icon={Calendar}       label={t.dashboard.eventsLabel}       value={stats.events ?? 0} />
+        <MiniStat icon={Users2}         label={t.dashboard.groupsLabel}       value={stats.groups ?? 0} />
+        <MiniStat icon={Bookmark}       label={t.dashboard.favoritesLabel}    value={stats.bookmarks ?? 0} />
       </div>
 
-      {/* Quick Actions */}
+      {/* Quick actions */}
       <Card className="border-border">
         <CardHeader>
           <CardTitle className="text-sm font-semibold text-primary">{t.dashboard.quickActions}</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <QuickAction href="/profile" title={t.dashboard.completeProfile} description={t.dashboard.completeProfileDesc} />
-          <QuickAction href="/marketplace" title={t.dashboard.exploreMarketplace} description={t.dashboard.exploreMarketplaceDesc} />
-          <QuickAction href="/forums" title={t.dashboard.joinForums} description={t.dashboard.joinForumsDesc} />
-          <QuickAction href="/events" title={t.dashboard.discoverEvents} description={t.dashboard.discoverEventsDesc} />
-          <QuickAction href="/tokens" title={t.dashboard.myTokens} description={t.dashboard.myTokensDesc} />
-          <QuickAction href="/badges" title={t.dashboard.myBadges} description={t.dashboard.myBadgesDesc} />
+          <QuickAction href="/profile"     title={t.dashboard.completeProfile}      description={t.dashboard.completeProfileDesc} />
+          <QuickAction href="/marketplace" title={t.dashboard.exploreMarketplace}   description={t.dashboard.exploreMarketplaceDesc} />
+          <QuickAction href="/forums"      title={t.dashboard.joinForums}            description={t.dashboard.joinForumsDesc} />
+          <QuickAction href="/events"      title={t.dashboard.discoverEvents}        description={t.dashboard.discoverEventsDesc} />
+          <QuickAction href="/tokens"      title={t.dashboard.myTokens}              description={t.dashboard.myTokensDesc} />
+          <QuickAction href="/badges"      title={t.dashboard.myBadges}              description={t.dashboard.myBadgesDesc} />
         </CardContent>
       </Card>
 
-      {/* Recent Activity */}
+      {/* Recent activity link */}
       {dashboard?.recentActivity > 0 && (
         <Card className="border-border">
           <CardContent className="pt-5 flex items-center gap-3">
@@ -195,11 +181,8 @@ function MiniStat({ icon: Icon, label, value }: { icon: any; label: string; valu
 
 function QuickAction({ href, title, description }: { href: string; title: string; description: string }) {
   return (
-    <Link
-      href={href}
-      className="border border-border rounded-lg p-4 transition hover:border-primary hover:bg-accent/30 group"
-    >
-      <h3 className="font-semibold text-primary group-hover:text-primary transition-colors font-heading text-sm">{title}</h3>
+    <Link href={href} className="border border-border rounded-lg p-4 transition hover:border-primary hover:bg-accent/30 group">
+      <h3 className="font-semibold text-primary text-sm">{title}</h3>
       <p className="mt-1 text-xs text-muted-foreground">{description}</p>
     </Link>
   );

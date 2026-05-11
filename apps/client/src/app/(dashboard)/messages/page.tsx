@@ -1,11 +1,13 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useUser } from "@/lib/auth-client";
 import { useT } from '@/lib/i18n';
 import { api } from '@/lib/api';
+import { getMediaUrl } from '@/lib/media-url';
 import { useQuery } from '@tanstack/react-query';
-import { MessageSquare, Loader2, Send } from 'lucide-react';
+import { MessageSquare, Loader2, Send, Wifi, WifiOff } from 'lucide-react';
+import { io, Socket } from 'socket.io-client';
 
 interface Conversation {
   id: string;
@@ -31,17 +33,41 @@ export default function MessagesPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [sending, setSending] = useState(false);
+  const [connected, setConnected] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const socketRef = useRef<Socket | null>(null);
 
   const { data: conversations = [], isLoading } = useQuery<Conversation[]>({
     queryKey: ['conversations', user?.id],
     queryFn: () => api.get(`/messaging/conversations/${user!.id}`).then((r) => r.data),
     enabled: !!user?.id,
+    refetchInterval: 15000,
   });
 
-  // Load messages when conversation changes
+  // WebSocket connection
   useEffect(() => {
-    if (!activeConv) return;
+    if (!user?.id) return;
+    const wsUrl = process.env.NEXT_PUBLIC_WS_URL || 'http://localhost:4000';
+    const socket = io(`${wsUrl}/messaging`, {
+      auth: { userId: user.id },
+      transports: ['websocket', 'polling'],
+    });
+    socketRef.current = socket;
+    socket.on('connect', () => setConnected(true));
+    socket.on('disconnect', () => setConnected(false));
+    socket.on('newMessage', (msg: Message) => {
+      setMessages((prev) => {
+        if (prev.find((m) => m.id === msg.id)) return prev;
+        return [...prev, msg];
+      });
+    });
+    return () => { socket.disconnect(); };
+  }, [user?.id]);
+
+  // Join conversation room when switching
+  useEffect(() => {
+    if (!activeConv || !socketRef.current) return;
+    socketRef.current.emit('joinConversation', activeConv);
     api.get(`/messaging/conversations/${activeConv}/messages`)
       .then((r) => setMessages([...r.data].reverse()))
       .catch(() => {});
@@ -52,20 +78,21 @@ export default function MessagesPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const sendMessage = async () => {
+  const sendMessage = useCallback(async () => {
     if (!newMessage.trim() || !activeConv || !user?.id || sending) return;
     setSending(true);
+    const content = newMessage.trim();
+    setNewMessage('');
     try {
       const { data: msg } = await api.post(`/messaging/messages`, {
-        conversationId: activeConv,
-        senderId: user.id,
-        content: newMessage,
+        conversationId: activeConv, senderId: user.id, content,
       });
-      setMessages((prev) => [...prev, msg]);
-      setNewMessage("");
-    } catch {}
+      setMessages((prev) => prev.find((m) => m.id === msg.id) ? prev : [...prev, msg]);
+      // Also emit via socket for real-time delivery to recipient
+      socketRef.current?.emit('sendMessage', { conversationId: activeConv, message: msg });
+    } catch { setNewMessage(content); }
     setSending(false);
-  };
+  }, [newMessage, activeConv, user?.id, sending]);
 
   const getOtherParticipant = (conv: Conversation) => {
     const other = conv.participants.find((p) => p.user.id !== user?.id);
@@ -84,8 +111,13 @@ export default function MessagesPage() {
     <div className="flex h-[calc(100vh-80px)] bg-card rounded-xl shadow-sm border border-border overflow-hidden">
       {/* Conversation list */}
       <div className="w-72 border-r border-border flex flex-col shrink-0">
-        <div className="p-4 border-b border-border">
+        <div className="p-4 border-b border-border flex items-center justify-between">
           <h2 className="text-base font-bold text-foreground">{t.header.messagesTooltip}</h2>
+          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+            {connected
+              ? <><Wifi className="h-3.5 w-3.5 text-green-500" /> <span className="text-green-500">En ligne</span></>
+              : <><WifiOff className="h-3.5 w-3.5" /> Hors ligne</>}
+          </div>
         </div>
         <div className="flex-1 overflow-y-auto">
           {conversations.length === 0 ? (
@@ -105,8 +137,10 @@ export default function MessagesPage() {
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-sm shrink-0">
-                      {other.firstName?.[0]}{other.lastName?.[0]}
+                    <div className="w-10 h-10 rounded-full bg-primary/10 overflow-hidden flex items-center justify-center text-primary font-semibold text-sm shrink-0">
+                      {getMediaUrl((other as any).avatarUrl)
+                        ? <img src={getMediaUrl((other as any).avatarUrl)!} alt="" className="w-full h-full object-cover" />
+                        : <>{other.firstName?.[0]}{other.lastName?.[0]}</>}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-foreground text-sm truncate">
